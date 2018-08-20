@@ -181,8 +181,11 @@ public class DockerContainerExecutor extends ContainerExecutor {
 
     //Variables for the launch environment can be injected from the command-line
     //while submitting the application
-    String containerImageName = container.getLaunchContext().getEnvironment()
-      .get(YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_IMAGE_NAME);
+    //modify get image from configuration rather than env
+    String containerImageName = getConf().get(
+            YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_IMAGE_NAME);
+
+    //
     if (LOG.isDebugEnabled()) {
       LOG.debug("containerImageName from launchContext: " + containerImageName);
     }
@@ -587,6 +590,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
       pout.println("exit $rc");
     }
 
+    //modify session script
     private void writeSessionScript(Path launchDst, Path pidFile)
       throws IOException {
       DataOutputStream out = null;
@@ -599,9 +603,12 @@ public class DockerContainerExecutor extends ContainerExecutor {
         // hence write pid to tmp file first followed by a mv
         pout.println("#!/usr/bin/env bash");
         pout.println();
+        pout.println("{");
+        pout.println("sleep 30");
         pout.println("echo "+ dockerPidScript +" > " + pidFile.toString()
           + ".tmp");
         pout.println("/bin/mv -f " + pidFile.toString() + ".tmp " + pidFile);
+        pout.println("} &");
         pout.println(dockerCommand + " bash \"" +
           launchDst.toUri().getPath().toString() + "\"");
       } finally {
