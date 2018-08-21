@@ -243,11 +243,16 @@ public class DockerContainerExecutor extends ContainerExecutor {
     //--net=host allows the container to take on the host's network stack
     //--name sets the Docker Container name to the YARN containerId string
     //-v is used to bind mount volumes for local, log and work dirs.
+    //modify: add mount path
+    String dockerCommand = getConf().get(
+            YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_EXEC_COMMAND);
     String commandStr = commands.append(dockerExecutor)
       .append(" ")
       .append("run")
       .append(" ")
-      .append("--rm --net=host")
+      .append("--rm --net=host --pid=host --privileged=true")
+      .append(" ")
+      .append(dockerCommand)
       .append(" ")
       .append(" --name " + containerIdStr)
       .append(localDirMount)
