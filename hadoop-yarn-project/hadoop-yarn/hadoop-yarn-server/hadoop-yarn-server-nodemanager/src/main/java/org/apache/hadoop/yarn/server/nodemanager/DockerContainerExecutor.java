@@ -606,6 +606,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
         // We need to do a move as writing to a file is not atomic
         // Process reading a file being written to may get garbled data
         // hence write pid to tmp file first followed by a mv
+        // modify move dockerpidscript to backend
         pout.println("#!/usr/bin/env bash");
         pout.println();
         pout.println("{");
@@ -614,8 +615,13 @@ public class DockerContainerExecutor extends ContainerExecutor {
           + ".tmp");
         pout.println("/bin/mv -f " + pidFile.toString() + ".tmp " + pidFile);
         pout.println("} &");
-        pout.println(dockerCommand + " bash \"" +
-          launchDst.toUri().getPath().toString() + "\"");
+        // modify add exec command field
+        String scriptCommand = getConf().get(
+                YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_SCRIPT_COMMAND);
+        pout.println(dockerCommand + " bash -c '" + scriptCommand + " && bash \"" +
+                launchDst.toUri().getPath().toString() + "\"'");
+        //pout.println(dockerCommand + " bash \"" +
+        //  launchDst.toUri().getPath().toString() + "\"");
       } finally {
         IOUtils.cleanupWithLogger(LOG, pout, out);
       }

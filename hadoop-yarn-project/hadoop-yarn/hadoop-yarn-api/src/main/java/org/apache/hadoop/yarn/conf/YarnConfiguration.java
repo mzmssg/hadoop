@@ -1549,6 +1549,9 @@ public class YarnConfiguration extends Configuration {
   public static final String NM_DOCKER_CONTAINER_EXECUTOR_EXEC_COMMAND =
           NM_PREFIX + "docker-container-executor.exec-command";
 
+  public static final String NM_DOCKER_CONTAINER_EXECUTOR_SCRIPT_COMMAND =
+          NM_PREFIX + "docker-container-executor.script-command";
+
   /** The name of the docker executor (For DockerContainerExecutor).*/
   public static final String NM_DOCKER_CONTAINER_EXECUTOR_EXEC_NAME =
     NM_PREFIX + "docker-container-executor.exec-name";
