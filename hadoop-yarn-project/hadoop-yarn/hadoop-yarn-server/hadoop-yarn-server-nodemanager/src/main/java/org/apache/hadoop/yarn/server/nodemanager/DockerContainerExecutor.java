@@ -248,6 +248,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
     //--net=host allows the container to take on the host's network stack
     //--name sets the Docker Container name to the YARN containerId string
     //-v is used to bind mount volumes for local, log and work dirs.
+    //-w sets the work dir inside the container
     //add docker option
     String dockerOption = getConf().get(
             YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_EXEC_OPTION);
@@ -256,6 +257,8 @@ public class DockerContainerExecutor extends ContainerExecutor {
       .append("run")
       .append(" ")
       .append("--rm --net=host --pid=host --privileged=true")
+      .append(" ")
+      .append("-w " + containerWorkDir.toUri().getPath().toString())
       .append(" ")
       .append(dockerOption)
       .append(" ")
@@ -616,9 +619,13 @@ public class DockerContainerExecutor extends ContainerExecutor {
         pout.println("#!/usr/bin/env bash");
         pout.println();
         pout.println("{");
-        pout.println("sleep 30");
+        pout.println("while /bin/true; do");
+        pout.println("sleep 5");
         pout.println("echo "+ dockerPidScript +" > " + pidFile.toString()
           + ".tmp");
+        pout.println("[ -n \"$(cat \"" + pidFile.toString() 
+                + ".tmp\")\" ] && break");
+        pout.println("done");
         pout.println("/bin/mv -f " + pidFile.toString() + ".tmp " + pidFile);
         pout.println("} &");
         //Add exec command before launch_script.
