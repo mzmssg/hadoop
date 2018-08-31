@@ -258,7 +258,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
       .append(" ")
       .append("--rm --net=host --pid=host --privileged=true")
       .append(" ")
-      .append("-w " + containerWorkDir.toUri().getPath().toString())
+      //.append("-w " + containerWorkDir.toUri().getPath().toString())
       .append(" ")
       .append(dockerOption)
       .append(" ")
@@ -619,11 +619,13 @@ public class DockerContainerExecutor extends ContainerExecutor {
         pout.println("#!/usr/bin/env bash");
         pout.println();
         pout.println("{");
-        pout.println("while /bin/true; do");
+        pout.println("n=10");
+        pout.println("while [ $n -gt 0 ]; do");
+        pout.println("let n=$n-1");
         pout.println("sleep 5");
         pout.println("echo "+ dockerPidScript +" > " + pidFile.toString()
           + ".tmp");
-        pout.println("[ -n \"$(cat \"" + pidFile.toString() 
+        pout.println("[ -n \"$(cat \"" + pidFile.toString()
                 + ".tmp\")\" ] && break");
         pout.println("done");
         pout.println("/bin/mv -f " + pidFile.toString() + ".tmp " + pidFile);
