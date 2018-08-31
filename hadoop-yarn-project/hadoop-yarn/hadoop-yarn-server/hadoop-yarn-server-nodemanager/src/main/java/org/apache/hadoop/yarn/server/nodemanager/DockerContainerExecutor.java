@@ -258,7 +258,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
       .append(" ")
       .append("--rm --net=host --pid=host --privileged=true")
       .append(" ")
-      //.append("-w " + containerWorkDir.toUri().getPath().toString())
+      .append("-w " + containerWorkDir.toUri().getPath().toString())
       .append(" ")
       .append(dockerOption)
       .append(" ")
