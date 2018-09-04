@@ -98,7 +98,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
   //containername:0.1 or
   //containername
   public static final String DOCKER_IMAGE_PATTERN =
-    "^(([\\w\\.-]+)(:\\d+)*\\/)?[\\w\\.:-]+$";
+          "^(([\\w\\.-]+)(:\\d+)*\\/)?([\\w\\.-]+\\/)?[\\w\\.:-]+$";
 
   private final FileContext lfs;
   private final Pattern dockerImagePattern;
