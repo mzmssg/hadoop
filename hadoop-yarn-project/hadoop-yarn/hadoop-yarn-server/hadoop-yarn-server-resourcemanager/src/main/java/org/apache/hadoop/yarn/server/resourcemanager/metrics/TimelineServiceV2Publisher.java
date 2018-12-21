@@ -196,6 +196,9 @@ public class TimelineServiceV2Publisher extends AbstractSystemMetricsPublisher {
         ApplicationMetricsConstants.APP_MEM_METRICS, timestamp,
         appMetrics.getMemorySeconds()));
     entityMetrics.add(getTimelineMetric(
+        ApplicationMetricsConstants.APP_GPU_METRICS, timestamp,
+        appMetrics.getMemorySeconds()));
+    entityMetrics.add(getTimelineMetric(
         ApplicationMetricsConstants.APP_MEM_PREEMPT_METRICS, timestamp,
         appMetrics.getPreemptedMemorySeconds()));
     entityMetrics.add(getTimelineMetric(
@@ -385,6 +388,8 @@ public class TimelineServiceV2Publisher extends AbstractSystemMetricsPublisher {
           container.getAllocatedResource().getMemorySize());
       entityInfo.put(ContainerMetricsConstants.ALLOCATED_VCORE_INFO,
           container.getAllocatedResource().getVirtualCores());
+      entityInfo.put(ContainerMetricsConstants.ALLOCATED_GPU_INFO,
+          container.getAllocatedResource().getGPUs());
       entityInfo.put(ContainerMetricsConstants.ALLOCATED_HOST_INFO,
           container.getAllocatedNode().getHost());
       entityInfo.put(ContainerMetricsConstants.ALLOCATED_PORT_INFO,

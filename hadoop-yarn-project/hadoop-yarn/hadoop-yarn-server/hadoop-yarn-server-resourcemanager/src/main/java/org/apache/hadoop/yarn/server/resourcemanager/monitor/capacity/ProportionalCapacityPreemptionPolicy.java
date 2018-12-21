@@ -330,6 +330,10 @@ public class ProportionalCapacityPreemptionPolicy
             && preemptionCandidates.get(container)
                 + maxWaitTime <= currentTime) {
           // kill it
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("kill container: in app=" + appAttemptId
+                + " #container=" + container);
+          }
           rmContext.getDispatcher().getEventHandler().handle(
               new ContainerPreemptEvent(appAttemptId, container,
                   SchedulerEventType.MARK_CONTAINER_FOR_KILLABLE));
@@ -338,7 +342,17 @@ public class ProportionalCapacityPreemptionPolicy
           if (preemptionCandidates.get(container) != null) {
             // We already updated the information to scheduler earlier, we need
             // not have to raise another event.
+            // kill it
+            if (LOG.isDebugEnabled()) {
+              LOG.debug("already raised, skip this time: in app=" + appAttemptId
+                  + " #container=" + container);
+            }
             continue;
+          }
+
+          if (LOG.isDebugEnabled()) {
+            LOG.debug("raise MARK_CONTAINER_FOR_PREEMPTION:" + appAttemptId
+                + " #container=" + container + "  currentTime=" + currentTime + " maxWaitTime:" + maxWaitTime);
           }
 
           //otherwise just send preemption events
@@ -432,7 +446,7 @@ public class ProportionalCapacityPreemptionPolicy
             RMNodeLabelsManager.NO_LABEL)));
 
     // compute total preemption allowed
-    Resource totalPreemptionAllowed = Resources.multiply(clusterResources,
+    Resource totalPreemptionAllowed = Resources.multiplyAndRoundUp(clusterResources,
         percentageClusterPreemptionAllowed);
 
     // based on ideal allocation select containers to be preemptionCandidates from each
@@ -444,7 +458,7 @@ public class ProportionalCapacityPreemptionPolicy
       long startTime = 0;
       if (LOG.isDebugEnabled()) {
         LOG.debug(MessageFormat
-            .format("Trying to use {0} to select preemption candidates",
+            .format("Trying to use {0} to select preemption candidates  + clusterResources:" + clusterResources + " totalPreemptionAllowed:" + totalPreemptionAllowed,
                 selector.getClass().getName()));
         startTime = clock.getTime();
       }

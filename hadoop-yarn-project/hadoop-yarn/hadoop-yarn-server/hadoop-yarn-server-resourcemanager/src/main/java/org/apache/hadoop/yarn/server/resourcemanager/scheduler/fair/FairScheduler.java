@@ -211,6 +211,7 @@ public class FairScheduler extends
 
   public boolean isAtLeastReservationThreshold(
       ResourceCalculator resourceCalculator, Resource resource) {
+    LOG.debug("isAtLeastReservationThreshold: resource:" + resource + " reservationThreshold");
     return Resources.greaterThanOrEqual(resourceCalculator,
         getClusterResource(), resource, reservationThreshold);
   }
@@ -268,6 +269,24 @@ public class FairScheduler extends
           + " allocation configuration: "
           + FairSchedulerConfiguration.RM_SCHEDULER_INCREMENT_ALLOCATION_VCORES
           + "=" + incrementVcore + ". Values must be greater than 0.");
+    }
+
+    // validate scheduler GPUs allocation setting
+    int minGPUs = conf.getInt(
+            YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_GPUS,
+            YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_GPUS);
+    int maxGPUs = conf.getInt(
+            YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS,
+            YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS);
+
+    if (minGPUs < 0 || minGPUs > maxGPUs) {
+      throw new YarnRuntimeException("Invalid resource scheduler GPUs"
+              + " allocation configuration"
+              + ", " + YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_GPUS
+              + "=" + minGPUs
+              + ", " + YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_GPUS
+              + "=" + maxGPUs + ", min should equal greater than 0"
+              + ", max should be no smaller than min.");
     }
   }
 
@@ -1740,7 +1759,7 @@ public class FairScheduler extends
   @Override
   public EnumSet<SchedulerResourceTypes> getSchedulingResourceTypes() {
     return EnumSet
-      .of(SchedulerResourceTypes.MEMORY, SchedulerResourceTypes.CPU);
+      .of(SchedulerResourceTypes.MEMORY, SchedulerResourceTypes.CPU, SchedulerResourceTypes.GPU);
   }
 
   @Override

@@ -746,6 +746,7 @@ public class RMAppImpl implements RMApp, Recoverable {
         RMAppMetrics rmAppMetrics = getRMAppMetrics();
         appUsageReport.setMemorySeconds(rmAppMetrics.getMemorySeconds());
         appUsageReport.setVcoreSeconds(rmAppMetrics.getVcoreSeconds());
+        appUsageReport.setGPUSeconds(rmAppMetrics.getGPUSeconds());
         appUsageReport.
             setPreemptedMemorySeconds(rmAppMetrics.
                 getPreemptedMemorySeconds());
@@ -870,15 +871,16 @@ public class RMAppImpl implements RMApp, Recoverable {
 
     try {
       ApplicationId appID = event.getApplicationId();
-      LOG.debug("Processing event for " + appID + " of type "
-          + event.getType());
+
       final RMAppState oldState = getState();
+      LOG.debug("Processing event for " + appID + " of type "
+          + event.getType() + "current state=" + oldState);
       try {
         /* keep the master in sync with the state machine */
         this.stateMachine.doTransition(event.getType(), event);
       } catch (InvalidStateTransitionException e) {
         LOG.error("App: " + appID
-            + " can't handle this event at current state", e);
+            + " can't handle this event at current state:" + getState() , e);
         /* TODO fail the application on the failed transition */
       }
 
@@ -1609,13 +1611,15 @@ public class RMAppImpl implements RMApp, Recoverable {
   
   @Override
   public RMAppMetrics getRMAppMetrics() {
-    Resource resourcePreempted = Resource.newInstance(0, 0);
+    Resource resourcePreempted = Resource.newInstance(0, 0, 0);
     int numAMContainerPreempted = 0;
     int numNonAMContainerPreempted = 0;
     long memorySeconds = 0;
     long vcoreSeconds = 0;
     long preemptedMemorySeconds = 0;
     long preemptedVcoreSeconds = 0;
+    long gpuSeconds = 0;
+
     for (RMAppAttempt attempt : attempts.values()) {
       if (null != attempt) {
         RMAppAttemptMetrics attemptMetrics =
@@ -1631,6 +1635,7 @@ public class RMAppImpl implements RMApp, Recoverable {
             attempt.getRMAppAttemptMetrics().getAggregateAppResourceUsage();
         memorySeconds += resUsage.getMemorySeconds();
         vcoreSeconds += resUsage.getVcoreSeconds();
+        gpuSeconds += resUsage.getGPUSeconds();
         preemptedMemorySeconds += attemptMetrics.getPreemptedMemory();
         preemptedVcoreSeconds += attemptMetrics.getPreemptedVcore();
       }
@@ -1638,7 +1643,7 @@ public class RMAppImpl implements RMApp, Recoverable {
 
     return new RMAppMetrics(resourcePreempted,
         numNonAMContainerPreempted, numAMContainerPreempted,
-        memorySeconds, vcoreSeconds,
+        memorySeconds, vcoreSeconds, gpuSeconds,
         preemptedMemorySeconds, preemptedVcoreSeconds);
   }
 

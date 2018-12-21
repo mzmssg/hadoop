@@ -84,13 +84,19 @@ class NodesPage extends RmView {
             .th(".mem", "Mem Used")
             .th(".mem", "Mem Avail")
             .th(".vcores", "VCores Used")
-            .th(".vcores", "VCores Avail");
+            .th(".vcores", "VCores Avail")
+            .th(".GPUs", "GPUs Used")
+            .th(".GPUs", "GPUs Avail")
+            .th(".GPUs", "GPUs Avail attribute");
       } else {
         trbody.th(".containers", "Running Containers (G)")
             .th(".mem", "Mem Used (G)")
             .th(".mem", "Mem Avail (G)")
             .th(".vcores", "VCores Used (G)")
             .th(".vcores", "VCores Avail (G)")
+            .th(".GPUs", "GPUs Used")
+            .th(".GPUs", "GPUs Avail")
+            .th(".GPUs", "GPUs Avail attribute")
             .th(".containers", "Running Containers (O)")
             .th(".mem", "Mem Used (O)")
             .th(".vcores", "VCores Used (O)")
@@ -162,6 +168,21 @@ class NodesPage extends RmView {
           nodeTableData.append("\",\"<a ").append("href='" + "//" + httpAddress)
               .append("'>").append(httpAddress).append("</a>\",").append("\"");
         }
+
+        int totalGPU = info.getUsedGPUs() + info.getAvailableGPUs();
+        String gpuAttribute = "";
+        //Append '0' before the gpu attribute to match GPU capacity.
+        if(totalGPU > 0){
+          gpuAttribute = Long.toBinaryString(info.getAvailableGPUAttribute());
+          StringBuffer sb = new StringBuffer();
+          int needZero = totalGPU - gpuAttribute.length();
+          while(needZero-- > 0){
+            sb.append("0");
+          }
+          sb.append(gpuAttribute);
+          gpuAttribute = sb.toString();
+        }
+
         nodeTableData.append("<br title='")
             .append(String.valueOf(info.getLastHealthUpdate())).append("'>")
             .append(Times.format(info.getLastHealthUpdate())).append("\",\"")
@@ -175,6 +196,11 @@ class NodesPage extends RmView {
             .append("\",\"").append(String.valueOf(info.getUsedVirtualCores()))
             .append("\",\"")
             .append(String.valueOf(info.getAvailableVirtualCores()))
+            .append("\",\"")
+            .append(String.valueOf(info.getUsedGPUs())).append("\",\"")
+            .append(String.valueOf(info.getAvailableGPUs()))
+            .append("\",\"")
+            .append(gpuAttribute)
             .append("\",\"");
 
         // If opportunistic containers are enabled, add extra fields.

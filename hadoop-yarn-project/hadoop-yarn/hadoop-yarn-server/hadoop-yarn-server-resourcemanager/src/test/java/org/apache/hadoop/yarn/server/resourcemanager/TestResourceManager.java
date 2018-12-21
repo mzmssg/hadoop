@@ -34,6 +34,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.ResourceRequest;
+import org.apache.hadoop.yarn.api.records.ValueRanges;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
@@ -92,18 +93,19 @@ public class TestResourceManager {
         
     final int memory = 4 * 1024;
     final int vcores = 4;
+    final int GPUs = 4;
     
     // Register node1
     String host1 = "host1";
     org.apache.hadoop.yarn.server.resourcemanager.NodeManager nm1 = 
       registerNode(host1, 1234, 2345, NetworkTopology.DEFAULT_RACK, 
-          Resources.createResource(memory, vcores));
+          Resources.createResource(memory, vcores, 0, 0, ValueRanges.newInstance()));
     
     // Register node2
     String host2 = "host2";
     org.apache.hadoop.yarn.server.resourcemanager.NodeManager nm2 = 
       registerNode(host2, 1234, 2345, NetworkTopology.DEFAULT_RACK, 
-          Resources.createResource(memory/2, vcores/2));
+          Resources.createResource(memory/2, vcores/2, 0, 0, ValueRanges.newInstance()));
 
     // Submit an application
     Application application = new Application("user1", resourceManager);
@@ -114,7 +116,7 @@ public class TestResourceManager {
     
     // Application resource requirements
     final int memory1 = 1024;
-    Resource capability1 = Resources.createResource(memory1, 1);
+    Resource capability1 = Resources.createResource(memory1, 1, 0);
     Priority priority1 = Priority.newInstance(1);
     application.addResourceRequestSpec(priority1, capability1);
     
@@ -122,7 +124,8 @@ public class TestResourceManager {
     application.addTask(t1);
     
     final int memory2 = 2048;
-    Resource capability2 = Resources.createResource(memory2, 1);
+
+    Resource capability2 = Resources.createResource(memory2, 1, 0);
     Priority priority0 = Priority.newInstance(0); // higher
     application.addResourceRequestSpec(priority0, capability2);
     
@@ -192,8 +195,8 @@ public class TestResourceManager {
     String host1 = "host1";
     final int memory = 4 * 1024;
     org.apache.hadoop.yarn.server.resourcemanager.NodeManager nm1 = 
-      registerNode(host1, 1234, 2345, NetworkTopology.DEFAULT_RACK, 
-          Resources.createResource(memory, 1));
+      registerNode(host1, 1234, 2345, NetworkTopology.DEFAULT_RACK,
+          Resources.createResource(memory, 4, 4, 15, ValueRanges.newInstance()));
     nm1.heartbeat();
     nm1.heartbeat();
     Collection<RMNode> values = resourceManager.getRMContext().getRMNodes().values();

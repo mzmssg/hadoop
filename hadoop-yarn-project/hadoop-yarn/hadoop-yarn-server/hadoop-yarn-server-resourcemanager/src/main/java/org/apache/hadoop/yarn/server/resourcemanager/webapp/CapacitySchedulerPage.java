@@ -449,7 +449,7 @@ class CapacitySchedulerPage extends RmView {
                 .getPartitionQueueCapacitiesInfo(csqinfo.label);
             used = capacities.getUsedCapacity() / 100;
             String partitionUiTag =
-                "Partition: " + nodeLabelDisplay + " " + label.getResource();
+                "Partition: " + nodeLabelDisplay + " " + label.getResource().toNoAttributeString();
             ul.li().
             a(_Q).$style(width(Q_MAX_WIDTH)).
               span().$style(join(width(used), ";left:0%;",
@@ -527,13 +527,13 @@ class CapacitySchedulerPage extends RmView {
         .td(Times.format(healthInfo.getLastSchedulerRunTime()))
         .td(
           healthInfo.getAllocationCount().toString() + " - "
-              + healthInfo.getResourcesAllocated().toString())
+              + healthInfo.getResourcesAllocated().toNoAttributeString())
         .td(
           healthInfo.getReservationCount().toString() + " - "
-              + healthInfo.getResourcesReserved().toString())
+              + healthInfo.getResourcesReserved().toNoAttributeString())
         .td(
           healthInfo.getReleaseCount().toString() + " - "
-              + healthInfo.getResourcesReleased().toString())._()._()._();
+              + healthInfo.getResourcesReleased().toNoAttributeString())._()._()._();
       Map<String, SchedulerHealth.DetailedInformation> info = new HashMap<>();
       info.put("Allocation", healthInfo.getLastAllocationDetails());
       info.put("Reservation", healthInfo.getLastReservationDetails());

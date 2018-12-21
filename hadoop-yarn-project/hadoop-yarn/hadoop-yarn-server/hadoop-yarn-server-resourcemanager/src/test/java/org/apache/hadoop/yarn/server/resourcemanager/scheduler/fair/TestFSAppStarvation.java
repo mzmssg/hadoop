@@ -207,7 +207,7 @@ public class TestFSAppStarvation extends FairSchedulerTestBase {
         "</fairSharePreemptionThreshold>");
     out.println("<minSharePreemptionTimeout>0" +
         "</minSharePreemptionTimeout>");
-    out.println("<minResources>2048mb,2vcores</minResources>");
+    out.println("<minResources>2048mb,2vcores,2gpus</minResources>");
     out.println("</queue>");
 
     // FAIR queue with fairshare preemption enabled
@@ -245,12 +245,12 @@ public class TestFSAppStarvation extends FairSchedulerTestBase {
         scheduler.preemptionThread;
 
     // Create and add two nodes to the cluster
-    addNode(NODE_CAPACITY_MULTIPLE * 1024, NODE_CAPACITY_MULTIPLE);
-    addNode(NODE_CAPACITY_MULTIPLE * 1024, NODE_CAPACITY_MULTIPLE);
+    addNode(NODE_CAPACITY_MULTIPLE * 1024, NODE_CAPACITY_MULTIPLE, NODE_CAPACITY_MULTIPLE);
+    addNode(NODE_CAPACITY_MULTIPLE * 1024, NODE_CAPACITY_MULTIPLE, NODE_CAPACITY_MULTIPLE);
 
     // Create an app that takes up all the resources on the cluster
     ApplicationAttemptId app
-        = createSchedulingRequest(1024, 1, "root.default", "default", 8);
+        = createSchedulingRequest(1024, 1, 0, "root.default", "default", 8);
 
     scheduler.update();
     sendEnoughNodeUpdatesToAssignFully();
@@ -271,7 +271,7 @@ public class TestFSAppStarvation extends FairSchedulerTestBase {
 
   private void submitAppsToEachLeafQueue() {
     for (String queue : QUEUES) {
-      createSchedulingRequest(1024, 1, "root." + queue, "user", 1);
+      createSchedulingRequest(1024, 1, 0,  "root." + queue, "user", 1);
     }
     scheduler.update();
   }

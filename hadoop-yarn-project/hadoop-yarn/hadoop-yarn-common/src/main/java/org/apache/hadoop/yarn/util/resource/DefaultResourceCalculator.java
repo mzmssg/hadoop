@@ -38,8 +38,12 @@ public class DefaultResourceCalculator extends ResourceCalculator {
 
   @Override
   public long computeAvailableContainers(Resource available, Resource required) {
-    // Only consider memory
-    return available.getMemorySize() / required.getMemorySize();
+
+      if(!isInvalidDivisor(required))    {
+        return available.getMemorySize() / required.getMemorySize();
+    }
+    else 
+        return available.getMemorySize();
   }
 
   @Override
@@ -57,13 +61,15 @@ public class DefaultResourceCalculator extends ResourceCalculator {
 
   @Override
   public float ratio(Resource a, Resource b) {
-    return (float)a.getMemorySize() / b.getMemorySize();
+      if(!isInvalidDivisor(b))    {
+          return (float)a.getMemorySize() / b.getMemorySize();
+      }
+      return (float)a.getMemorySize();
   }
 
   @Override
   public Resource divideAndCeil(Resource numerator, int denominator) {
-    return Resources.createResource(
-        divideAndCeil(numerator.getMemorySize(), denominator));
+    return divideAndCeil(numerator, (float) denominator);
   }
 
   @Override
@@ -116,7 +122,7 @@ public class DefaultResourceCalculator extends ResourceCalculator {
       Resource stepFactor) {
     return Resources.createResource(
         roundDown(
-            (long)(r.getMemorySize() * by),
+            (int)(r.getMemorySize() * by),
             stepFactor.getMemorySize()
             )
         );

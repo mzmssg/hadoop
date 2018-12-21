@@ -108,6 +108,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import sun.rmi.runtime.Log;
 
 
 @SuppressWarnings("unchecked")
@@ -775,6 +776,10 @@ public class MockRM extends ResourceManager {
       }
     }
     sub.setAMContainerResourceRequests(amResourceRequests);
+
+    LOG.info("request:" + sub.toString());
+    LOG.info("request resource:" + sub.getResource());
+
     req.setApplicationSubmissionContext(sub);
     UserGroupInformation fakeUser =
       UserGroupInformation.createUserForTesting(user, new String[] {"someGroup"});
@@ -825,17 +830,22 @@ public class MockRM extends ResourceManager {
 
   public MockNM registerNode(String nodeIdStr, int memory, int vCores)
       throws Exception {
+     return registerNode(nodeIdStr, memory, vCores, 0);
+  }
+
+  public MockNM registerNode(String nodeIdStr, int memory, int vCores, int GPUs)
+      throws Exception {
     MockNM nm =
-        new MockNM(nodeIdStr, memory, vCores, getResourceTrackerService());
+        new MockNM(nodeIdStr, memory, vCores, GPUs, getResourceTrackerService());
     nm.registerNode();
     drainEventsImplicitly();
     return nm;
   }
   
-  public MockNM registerNode(String nodeIdStr, int memory, int vCores,
+  public MockNM registerNode(String nodeIdStr, int memory, int vCores, int GPUs,
       List<ApplicationId> runningApplications) throws Exception {
     MockNM nm =
-        new MockNM(nodeIdStr, memory, vCores, getResourceTrackerService(),
+        new MockNM(nodeIdStr, memory, vCores, GPUs, getResourceTrackerService(),
             YarnVersionInfo.getVersion());
     nm.registerNode(runningApplications);
     drainEventsImplicitly();
