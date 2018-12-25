@@ -355,9 +355,10 @@ public class NodeManagerHardwareUtils {
    *          - Configuration object
    * @return Fraction of GPUs to be used for YARN containers
    */
+    // Todo: remove this function, it will never be used
   public static float getContainersGPUs(ResourceCalculatorPlugin plugin,
                                          Configuration conf) {
-    int numGPUs = plugin.getNumGPUs(false, 0);
+    int numGPUs = plugin.getNumGPUs(false, 0, "");
     int nodeGpuPercentage = getNodeGpuPercentage(conf);
 
     return (nodeGpuPercentage * numGPUs) / 100.0f;
