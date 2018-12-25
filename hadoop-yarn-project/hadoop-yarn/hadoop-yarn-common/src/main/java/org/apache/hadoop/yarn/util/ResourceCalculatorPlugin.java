@@ -177,8 +177,8 @@ public class ResourceCalculatorPlugin extends Configured {
    *
    * @return number of GPUs
    */
-  public int getNumGPUs(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold) {
-    return sys.getNumGPUs(excludeOwnerlessUsingGpu, gpuNotReadyMemoryThreshold);
+  public int getNumGPUs(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold, String gpuBlacklistFile) {
+    return sys.getNumGPUs(excludeOwnerlessUsingGpu, gpuNotReadyMemoryThreshold, gpuBlacklistFile);
   }
   
   /**
@@ -186,8 +186,9 @@ public class ResourceCalculatorPlugin extends Configured {
    *
    * @return bit map set of gpu capacity.
    */
-  public long getGpuAttributeCapacity(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold) {
-    return sys.getGpuAttributeCapacity(excludeOwnerlessUsingGpu, gpuNotReadyMemoryThreshold);
+  public long getGpuAttributeCapacity(
+      boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold, String gpuBlacklistFile) {
+    return sys.getGpuAttributeCapacity(excludeOwnerlessUsingGpu, gpuNotReadyMemoryThreshold, gpuBlacklistFile);
   }
 
   /**

@@ -61,6 +61,7 @@ public class NodeResourceMonitorImpl extends AbstractService implements
   // Usually, the Gpu memory status is non-zero, but the process of this GPU is empty.
   private boolean excludeOwnerlessUsingGpus;
   private int gpuNotReadyMemoryThreshold;
+  private String gpuBlacklistFile;
 
   /**
    * Initialize the node resource monitor.
@@ -94,7 +95,12 @@ public class NodeResourceMonitorImpl extends AbstractService implements
         conf.getInt(YarnConfiguration.GPU_NOT_READY_MEMORY_THRESHOLD,
             YarnConfiguration.DEFAULT_GPU_NOT_READY_MEMORY_THRESHOLD);
 
-    this.gpuAttribute = resourceCalculatorPlugin.getGpuAttributeCapacity(excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold);
+    gpuBlacklistFile =
+        conf.get(YarnConfiguration.GPU_BLACKLIST_FILE,
+            YarnConfiguration.DEFAULT_GPU_BLACKLIST_FILE);
+
+    this.gpuAttribute = resourceCalculatorPlugin.getGpuAttributeCapacity(
+        excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold, gpuBlacklistFile);
     this.usedPorts = resourceCalculatorPlugin.getPortsUsage();
   }
 
@@ -174,7 +180,8 @@ public class NodeResourceMonitorImpl extends AbstractService implements
                 (int) (vmem >> 20), // B -> MB
                 vcores); // Used Virtual Cores
 
-        gpuAttribute = resourceCalculatorPlugin.getGpuAttributeCapacity(excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold);
+        gpuAttribute = resourceCalculatorPlugin.getGpuAttributeCapacity(
+            excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold, gpuBlacklistFile);
         usedPorts = resourceCalculatorPlugin.getPortsUsage();
 
         try {
