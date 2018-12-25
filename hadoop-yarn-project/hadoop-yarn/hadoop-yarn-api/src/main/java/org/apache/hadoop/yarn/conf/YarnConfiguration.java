@@ -1992,7 +1992,7 @@ public class YarnConfiguration extends Configuration {
    * The GPU blacklist file fullpath to indicate whether this Gpus should be used.
    * Which should contains a bitmap string, 1 means in blacklist, 0 means out.
    */
-  public static final String GPU_BLACKLIST_FILE = YARN_PREFIX
+  public static final String GPU_BLACKLIST_FILE = NM_PREFIX
       + "gpu_blacklist_file";
   public static final String DEFAULT_GPU_BLACKLIST_FILE = "";
 
