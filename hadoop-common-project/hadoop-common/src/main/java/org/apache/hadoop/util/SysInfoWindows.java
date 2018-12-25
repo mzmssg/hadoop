@@ -244,13 +244,13 @@ public class SysInfoWindows extends SysInfo {
   }
 
   @Override
-  public int getNumGPUs(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold) {
+  public int getNumGPUs(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold, String gpuBlacklistFile) {
     return 0;
   }
 
 
   @Override
-  public long getGpuAttributeCapacity(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold) {
+  public long getGpuAttributeCapacity(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold, String gpuBlacklistFile) {
     return 0L;
   }
 
