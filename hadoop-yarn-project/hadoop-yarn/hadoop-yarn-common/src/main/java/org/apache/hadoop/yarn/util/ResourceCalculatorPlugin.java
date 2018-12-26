@@ -173,6 +173,31 @@ public class ResourceCalculatorPlugin extends Configured {
   }
 
   /**
+   * Obtain the total number of GPUs present on the system.
+   *
+   * @return number of GPUs
+   */
+  public int getNumGPUs(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold) {
+    return sys.getNumGPUs(excludeOwnerlessUsingGpu, gpuNotReadyMemoryThreshold);
+  }
+  
+  /**
+   * Obtain the GPUs utilization information. 
+   *
+   * @return bit map set of gpu capacity.
+   */
+  public long getGpuAttributeCapacity(boolean excludeOwnerlessUsingGpu, int gpuNotReadyMemoryThreshold) {
+    return sys.getGpuAttributeCapacity(excludeOwnerlessUsingGpu, gpuNotReadyMemoryThreshold);
+  }
+
+  /**
+   * Obtain the PORTs utilization information.
+   *
+   * @return a string with ports like: "25,110,23,42"
+   */
+  public String getPortsUsage() {return sys.getPortsUsage();}
+
+  /**
    * Create the ResourceCalculatorPlugin from the class name and configure it. If
    * class name is null, this method will try and return a memory calculator
    * plugin available for this system.

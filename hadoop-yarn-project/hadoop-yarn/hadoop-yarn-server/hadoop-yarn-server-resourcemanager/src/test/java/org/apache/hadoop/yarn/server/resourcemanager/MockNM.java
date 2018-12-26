@@ -26,14 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.ContainerState;
-import org.apache.hadoop.yarn.api.records.ContainerStatus;
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.server.api.protocolrecords.NMContainerStatus;
 import org.apache.hadoop.yarn.server.api.protocolrecords.NodeHeartbeatRequest;
@@ -46,6 +39,7 @@ import org.apache.hadoop.yarn.server.api.records.NodeHealthStatus;
 import org.apache.hadoop.yarn.server.api.records.NodeStatus;
 import org.apache.hadoop.yarn.server.utils.BuilderUtils;
 import org.apache.hadoop.yarn.util.Records;
+import org.apache.hadoop.yarn.util.ResourceCalculatorPlugin;
 import org.apache.hadoop.yarn.util.YarnVersionInfo;
 import org.mortbay.log.Log;
 
@@ -55,6 +49,10 @@ public class MockNM {
   private NodeId nodeId;
   private long memory;
   private int vCores;
+  private int GPUs;
+  private long GPUAttribute;
+  private ValueRanges ports;
+
   private ResourceTrackerService resourceTracker;
   private int httpPort = 2;
   private MasterKey currentContainerTokenMasterKey;
@@ -70,22 +68,38 @@ public class MockNM {
     this(nodeIdStr, memory,
         Math.max(1, (memory * YarnConfiguration.DEFAULT_NM_VCORES) /
             YarnConfiguration.DEFAULT_NM_PMEM_MB),
+        Math.min(Math.max(1, (memory * YarnConfiguration.DEFAULT_NM_GPUS) /
+            YarnConfiguration.DEFAULT_NM_PMEM_MB), 32),   // Maximum number of GPUs expressed by bit vector
         resourceTracker);
   }
 
-  public MockNM(String nodeIdStr, int memory, int vcores,
+  public MockNM(String nodeIdStr, int memory, int vcores, int GPUs,
       ResourceTrackerService resourceTracker) {
-    this(nodeIdStr, memory, vcores, resourceTracker, YarnVersionInfo.getVersion());
+    this(nodeIdStr, memory, vcores, GPUs, resourceTracker, YarnVersionInfo.getVersion());
   }
 
-  public MockNM(String nodeIdStr, int memory, int vcores,
+  public MockNM(String nodeIdStr, int memory, int vcores, int GPUs,
       ResourceTrackerService resourceTracker, String version) {
     this.memory = memory;
     this.vCores = vcores;
+    this.GPUs = GPUs;
     this.resourceTracker = resourceTracker;
     this.version = version;
     String[] splits = nodeIdStr.split(":");
     nodeId = BuilderUtils.newNodeId(splits[0], Integer.parseInt(splits[1]));
+    GPUAttribute = initGPUAttribute(GPUs);
+    ports = ValueRanges.iniFromExpression("[1-65535]");
+  }
+
+  private long initGPUAttribute(int GPUs)
+  {
+    long result = 0;
+    long pos = 1;
+    while (Long.bitCount(result) < GPUs) {
+      result = result | pos;
+      pos = pos << 1;
+    }
+    return result;
   }
 
   public NodeId getNodeId() {
@@ -146,7 +160,8 @@ public class MockNM {
         RegisterNodeManagerRequest.class);
     req.setNodeId(nodeId);
     req.setHttpPort(httpPort);
-    Resource resource = BuilderUtils.newResource(memory, vCores);
+    Resource resource = BuilderUtils.newResource(memory, vCores, GPUs, GPUAttribute);
+    resource.setPorts(ports);
     req.setResource(resource);
     req.setContainerStatuses(containerReports);
     req.setNMVersion(version);
@@ -160,6 +175,9 @@ public class MockNM {
     if (newResource != null) {
       memory = (int) newResource.getMemorySize();
       vCores = newResource.getVirtualCores();
+      GPUs = newResource.getGPUs();
+      GPUAttribute = newResource.getGPUAttribute();
+      ports = newResource.getPorts();
     }
     containerStats.clear();
     if (containerReports != null) {
@@ -239,6 +257,11 @@ public class MockNM {
     healthStatus.setIsNodeHealthy(isHealthy);
     healthStatus.setLastHealthReportTime(1);
     status.setNodeHealthStatus(healthStatus);
+
+    Resource resource = BuilderUtils.newResource(memory, vCores, GPUs, GPUAttribute);
+    resource.setPorts(ports);
+    status.setResource(resource);
+
     req.setNodeStatus(status);
     req.setLastKnownContainerTokenMasterKey(this.currentContainerTokenMasterKey);
     req.setLastKnownNMTokenMasterKey(this.currentNMTokenMasterKey);
@@ -266,6 +289,9 @@ public class MockNM {
     if (newResource != null) {
       memory = newResource.getMemorySize();
       vCores = newResource.getVirtualCores();
+      GPUs = newResource.getGPUs();
+      GPUAttribute = newResource.getGPUAttribute();
+      ports = newResource.getPorts();
     }
 
     return heartbeatResponse;
@@ -281,5 +307,17 @@ public class MockNM {
 
   public String getVersion() {
     return version;
+  }
+
+  public int getGPUs() {
+    return GPUs;
+  }
+
+  public long getGPUAttribute() {
+    return GPUAttribute;
+  }
+
+  public ValueRanges getPorts() {
+    return ports;
   }
 }

@@ -91,10 +91,13 @@ public abstract class AbstractSchedulerPlanFollower implements PlanFollower {
     Resource clusterResources = scheduler.getClusterResource();
     Resource planResources =
         getPlanResources(plan, planQueue, clusterResources);
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("clusterResources: " + clusterResources + " planResources:" + planResources);
+    }
     Set<ReservationAllocation> currentReservations =
         plan.getReservationsAtTime(now);
     Set<String> curReservationNames = new HashSet<String>();
-    Resource reservedResources = Resource.newInstance(0, 0);
+    Resource reservedResources = Resource.newInstance(0, 0, 0);
     int numRes = getReservedResources(now, currentReservations,
         curReservationNames, reservedResources);
     // create the default reservation queue if it doesnt exist

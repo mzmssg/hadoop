@@ -18,6 +18,8 @@
 
 package org.apache.hadoop.yarn.server.resourcemanager.monitor.capacity;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.policy.PriorityUtilizationQueueOrderingPolicy;
 import org.apache.hadoop.yarn.util.resource.ResourceCalculator;
@@ -38,6 +40,8 @@ public class AbstractPreemptableResourceCalculator {
   protected final CapacitySchedulerPreemptionContext context;
   protected final ResourceCalculator rc;
   private boolean isReservedPreemptionCandidatesSelector;
+  private static final Log LOG =
+      LogFactory.getLog(AbstractPreemptableResourceCalculator.class);
 
   static class TQComparator implements Comparator<TempQueuePerPartition> {
     private ResourceCalculator rc;
@@ -123,11 +127,20 @@ public class AbstractPreemptableResourceCalculator {
       TempQueuePerPartition q = i.next();
       Resource used = q.getUsed();
 
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("totGuarant:" + totGuarant.toNoAttributeString() + " detailQueue:" + q.toString());
+      }
+
       if (Resources.greaterThan(rc, totGuarant, used, q.getGuaranteed())) {
         q.idealAssigned = Resources.add(q.getGuaranteed(), q.untouchableExtra);
       } else {
         q.idealAssigned = Resources.clone(used);
       }
+
+      if(LOG.isDebugEnabled()) {
+        LOG.debug("totGuarant:" + totGuarant.toNoAttributeString() + " detailQueue:" + q.toString());
+      }
+
       Resources.subtractFrom(unassigned, q.idealAssigned);
       // If idealAssigned < (allocated + used + pending), q needs more
       // resources, so
@@ -140,7 +153,7 @@ public class AbstractPreemptableResourceCalculator {
 
     // assign all cluster resources until no more demand, or no resources are
     // left
-    while (!orderedByNeed.isEmpty() && Resources.greaterThan(rc, totGuarant,
+    while (!orderedByNeed.isEmpty() && Resources.greaterThan(rc, null,
         unassigned, Resources.none())) {
       Resource wQassigned = Resource.newInstance(0, 0);
       // we compute normalizedGuarantees capacity based on currently active
@@ -160,11 +173,14 @@ public class AbstractPreemptableResourceCalculator {
           .hasNext();) {
         TempQueuePerPartition sub = i.next();
         Resource wQavail = Resources.multiplyAndNormalizeUp(rc, unassigned,
-            sub.normalizedGuarantee, Resource.newInstance(1, 1));
+            sub.normalizedGuarantee, Resource.newInstance(1, 1, 1));
         Resource wQidle = sub.offer(wQavail, rc, totGuarant,
             isReservedPreemptionCandidatesSelector);
         Resource wQdone = Resources.subtract(wQavail, wQidle);
 
+        if(LOG.isDebugEnabled()) {
+          LOG.debug("unassigned:" + unassigned.toNoAttributeString() + " wQavail:" + wQavail + " wQdone:" + wQdone + " qdetailDate:" + sub.toString());
+        }
         if (Resources.greaterThan(rc, totGuarant, wQdone, Resources.none())) {
           // The queue is still asking for more. Put it back in the priority
           // queue, recalculating its order based on need.
@@ -210,6 +226,11 @@ public class AbstractPreemptableResourceCalculator {
       for (TempQueuePerPartition q : queues) {
         q.normalizedGuarantee = Resources.divide(rc, clusterResource,
             q.getGuaranteed(), activeCap);
+
+        if(LOG.isDebugEnabled()) {
+          LOG.debug("allQueueGuaranteed:" + activeCap.toNoAttributeString() + " detailQueue:" + q.toString());
+        }
+
       }
     }
   }

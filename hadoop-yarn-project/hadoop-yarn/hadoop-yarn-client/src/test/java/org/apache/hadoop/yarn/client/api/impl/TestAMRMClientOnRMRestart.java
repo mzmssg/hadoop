@@ -687,7 +687,7 @@ public class TestAMRMClientOnRMRestart {
   }
 
   private ContainerRequest createReq(int priority, int memory, String[] hosts) {
-    Resource capability = Resource.newInstance(memory, 1);
+    Resource capability = Resource.newInstance(memory, 1, 1);
     Priority priorityOfContainer = Priority.newInstance(priority);
     return new ContainerRequest(capability, hosts,
         new String[] { NetworkTopology.DEFAULT_RACK }, priorityOfContainer);

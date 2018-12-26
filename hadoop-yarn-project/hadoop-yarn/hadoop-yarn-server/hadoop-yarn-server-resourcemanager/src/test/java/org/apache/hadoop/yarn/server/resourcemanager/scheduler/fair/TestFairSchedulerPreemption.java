@@ -17,6 +17,8 @@
  */
 package org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.server.resourcemanager.MockRM;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNode;
@@ -56,6 +58,9 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
 
   // Node Capacity = NODE_CAPACITY_MULTIPLE * (1 GB or 1 vcore)
   private static final int NODE_CAPACITY_MULTIPLE = 4;
+
+  private static final Log LOG = LogFactory.getLog(
+      TestFairSchedulerPreemption.class.getName());
 
   private final boolean fairsharePreemption;
   private final boolean drf;
@@ -116,6 +121,7 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
      *      |--- child-1
      *      |--- child-2
      */
+    ALLOC_FILE.deleteOnExit();
     PrintWriter out = new PrintWriter(new FileWriter(ALLOC_FILE));
     out.println("<?xml version=\"1.0\"?>");
     out.println("<allocations>");
@@ -197,8 +203,8 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
 
     // Create and add two nodes to the cluster, with capacities
     // disproportional to the container requests.
-    addNode(NODE_CAPACITY_MULTIPLE * GB, 3 * NODE_CAPACITY_MULTIPLE);
-    addNode(NODE_CAPACITY_MULTIPLE * GB, 3 * NODE_CAPACITY_MULTIPLE);
+    addNode(NODE_CAPACITY_MULTIPLE * GB, 3 * NODE_CAPACITY_MULTIPLE, 0);
+    addNode(NODE_CAPACITY_MULTIPLE * GB, 3 * NODE_CAPACITY_MULTIPLE, 0);
 
     // Reinitialize the scheduler so DRF policy picks up cluster capacity
     // TODO (YARN-6194): One shouldn't need to call this
@@ -231,7 +237,7 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
   private void takeAllResources(String queueName) {
     // Create an app that takes up all the resources on the cluster
     ApplicationAttemptId appAttemptId
-        = createSchedulingRequest(GB, 1, queueName, "default",
+        = createSchedulingRequest(GB, 1, 0, queueName, "default",
         NODE_CAPACITY_MULTIPLE * rmNodes.size());
     greedyApp = scheduler.getSchedulerApp(appAttemptId);
     scheduler.update();
@@ -254,7 +260,7 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
   private void preemptHalfResources(String queueName)
       throws InterruptedException {
     ApplicationAttemptId appAttemptId
-        = createSchedulingRequest(2 * GB, 2, queueName, "default",
+        = createSchedulingRequest(2 * GB, 2, 0, queueName, "default",
         NODE_CAPACITY_MULTIPLE * rmNodes.size() / 2);
     starvingApp = scheduler.getSchedulerApp(appAttemptId);
 
@@ -338,12 +344,15 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
   @Test
   public void testPreemptionWithinSameLeafQueue() throws Exception {
     String queue = "root.preemptable.child-1";
+    LOG.info("testPreemptionWithinSameLeafQueue:" + queue);
     submitApps(queue, queue);
+    LOG.info("testPreemptionWithinSameLeafQueue: done submitApps");
     if (fairsharePreemption) {
       verifyPreemption(2);
     } else {
       verifyNoPreemption();
     }
+    LOG.info("testPreemptionWithinSameLeafQueue: done verifyNoPreemption");
   }
 
   @Test
@@ -391,6 +400,7 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
 
     verifyPreemption(2);
 
+
     ArrayList<RMContainer> containers =
         (ArrayList<RMContainer>) starvingApp.getLiveContainers();
     String host0 = containers.get(0).getNodeId().getHost();
@@ -411,7 +421,6 @@ public class TestFairSchedulerPreemption extends FairSchedulerTestBase {
 
     // Let one of the child queues take over the entire cluster
     takeAllResources("root.preemptable.child-1");
-
     // Submit a job so half the resources go to parent's sibling
     preemptHalfResources("root.preemptable-sibling");
     verifyPreemption(2);
