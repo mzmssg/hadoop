@@ -605,8 +605,8 @@ public class TestSysInfoLinux {
   public void parsingGPUFile() throws Exception {
 
     InitialGPUTestFile();
-    assertEquals(7, plugin.getNumGPUs(false, 0));
-    assertEquals(253, plugin.getGpuAttributeCapacity(false, 0));
+    assertEquals(7, plugin.getNumGPUs(false, 0, ""));
+    assertEquals(253, plugin.getGpuAttributeCapacity(false, 0, ""));
   }
 
 

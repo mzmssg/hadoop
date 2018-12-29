@@ -763,15 +763,16 @@ public class SysInfoLinux extends SysInfo {
 
   /** {@inheritDoc} */
   @Override
-  public int getNumGPUs(boolean excludeOwnerlessUsingGpus, int gpuNotReadyMemoryThreshold) {
-    refreshGpuIfNeeded(excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold);
+  public int getNumGPUs(boolean excludeOwnerlessUsingGpus, int gpuNotReadyMemoryThreshold, String gpuBlacklistFile) {
+    refreshGpuIfNeeded(excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold, gpuBlacklistFile);
     return numGPUs;
   }
 
   /** {@inheritDoc} */
   @Override
-  public long getGpuAttributeCapacity(boolean excludeOwnerlessUsingGpus, int gpuNotReadyMemoryThreshold) {
-    refreshGpuIfNeeded(excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold);
+  public long getGpuAttributeCapacity(
+      boolean excludeOwnerlessUsingGpus, int gpuNotReadyMemoryThreshold, String gpuBlacklistFile) {
+    refreshGpuIfNeeded(excludeOwnerlessUsingGpus, gpuNotReadyMemoryThreshold, gpuBlacklistFile);
     return gpuAttributeCapacity;
   }
 
@@ -796,11 +797,52 @@ public class SysInfoLinux extends SysInfo {
     }
   }
 
-  private void refreshGpuIfNeeded(boolean excludeOwnerlessUsingGpus, int gpuNotReadyMemoryThreshold) {
+  private Long getGpuBlacklist(String blacklistFile){
+
+    Long gpuAttributeBlacklist = 0L;
+    if(blacklistFile != null && !blacklistFile.equals("")) {
+
+      // Read gpu blacklist file
+      BufferedReader in = null;
+      String gpuBlacklistStr = null;
+
+      try {
+        in = new BufferedReader(new InputStreamReader(
+            new FileInputStream(blacklistFile), Charset.forName("UTF-8")));
+        gpuBlacklistStr = in.readLine();
+        if (gpuBlacklistStr != null && !gpuBlacklistStr.equals("")) {
+          gpuAttributeBlacklist = Long.parseLong(gpuBlacklistStr, 2);
+        }
+      } catch (FileNotFoundException e) {
+        LOG.info("No GPU blacklist file found: " + blacklistFile);
+      } catch (NumberFormatException e) {
+        LOG.warn("Error formatting gpu blacklist: " + gpuBlacklistStr, e);
+      } catch (Exception e) {
+        LOG.warn("Error getting GPU blacklist", e);
+      } finally {
+        // Close the streams
+        try {
+          if(in != null) {
+            in.close();
+          }
+        } catch (IOException e) {
+          LOG.warn("Error closing the stream " + blacklistFile, e);
+        }
+      }
+    }
+    return gpuAttributeBlacklist;
+  }
+
+
+  private void refreshGpuIfNeeded(boolean excludeOwnerlessUsingGpus, int gpuNotReadyMemoryThreshold, String gpuBlacklistFile) {
 
     long now = System.currentTimeMillis();
     if (now - lastRefreshGpuTime > REFRESH_INTERVAL_MS) {
       lastRefreshGpuTime = now;
+      Long gpuAttributeBlacklist = getGpuBlacklist(gpuBlacklistFile);
+      if (gpuAttributeBlacklist != 0){
+        LOG.info("GPU:" + Long.toBinaryString(gpuAttributeBlacklist) + " in blacklist, exclude these Gpus");
+      }
       try {
         String ln = "";
         Long gpuAttributeUsed = 0L;
@@ -847,12 +889,17 @@ public class SysInfoLinux extends SysInfo {
         }
         input.close();
         ir.close();
+        // Don't consider GPU in blacklist
+        gpuAttributeCapacity &= ~gpuAttributeBlacklist;
+        gpuAttributeUsed &= ~gpuAttributeBlacklist;
+        gpuAttributeProcess &= ~gpuAttributeBlacklist;
+
         Long ownerLessGpus = (gpuAttributeUsed & ~gpuAttributeProcess);
         if ((ownerLessGpus != 0)) {
           LOG.info("GpuAttributeCapacity:" + Long.toBinaryString(gpuAttributeCapacity) + " GpuAttributeUsed:" + Long.toBinaryString(gpuAttributeUsed) + " GpuAttributeProcess:" + Long.toBinaryString(gpuAttributeProcess));
           if (excludeOwnerlessUsingGpus) {
             gpuAttributeCapacity = (gpuAttributeCapacity & ~ownerLessGpus);
-            LOG.error("GPU:" + Long.toBinaryString(ownerLessGpus) + " is using by unknown process, will exclude these Gpus and won't schedule jobs into these Gpus");
+            LOG.error("GPU: " + Long.toBinaryString(ownerLessGpus) + " is using by unknown process, will exclude these Gpus and won't schedule jobs into these Gpus");
           } else {
             LOG.error("GPU: " + Long.toBinaryString(ownerLessGpus) + " is using by unknown process, will ignore it and schedule jobs on these GPU. ");
           }
@@ -942,8 +989,8 @@ public class SysInfoLinux extends SysInfo {
     System.out.println("Total storage written (bytes) : "
             + plugin.getStorageBytesWritten());
 
-    System.out.println("Number of GPUs : " + plugin.getNumGPUs(true, 0));
-    System.out.println("GPUs attribute : " + plugin.getGpuAttributeCapacity(true, 0));
+    System.out.println("Number of GPUs : " + plugin.getNumGPUs(true, 0, ""));
+    System.out.println("GPUs attribute : " + plugin.getGpuAttributeCapacity(true, 0, ""));
     System.out.println("used Ports : " + plugin.getPortsUsage());
 
     try {

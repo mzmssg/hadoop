@@ -1988,6 +1988,14 @@ public class YarnConfiguration extends Configuration {
     + "gpu_not_ready_memory_threshold-mb";
   public static final int DEFAULT_GPU_NOT_READY_MEMORY_THRESHOLD = 20;
 
+  /**
+   * The GPU blacklist file fullpath to indicate whether this Gpus should be used.
+   * Which should contains a bitmap string, 1 means in blacklist, 0 means out.
+   */
+  public static final String GPU_BLACKLIST_FILE = NM_PREFIX
+      + "gpu_blacklist_file";
+  public static final String DEFAULT_GPU_BLACKLIST_FILE = "";
+
 
   /**
    * CLASSPATH for YARN applications. A comma-separated list of CLASSPATH
