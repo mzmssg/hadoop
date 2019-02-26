@@ -633,7 +633,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
         //Add exec command before launch_script.
         String scriptCommand = getConf().get(
                 YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_SCRIPT_COMMAND);
-        pout.println(dockerCommand + " bash -c '" + scriptCommand + " && bash \"" +
+        pout.println(dockerCommand + " bash -c '" + scriptCommand + " && exec bash \"" +
                 launchDst.toUri().getPath().toString() + "\"'");
       } finally {
         IOUtils.cleanupWithLogger(LOG, pout, out);

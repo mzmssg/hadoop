@@ -690,7 +690,7 @@ public class ContainerLaunch implements Callable<Integer> {
           LOG.debug("Sending signal to pid " + processId + " as user " + user
               + " for container " + containerIdStr);
         }
-        final Signal signal = sleepDelayBeforeSigKill > 0
+        final Signal signal = sleepDelayBeforeSigKill >= 0
           ? Signal.TERM
           : Signal.KILL;
 
