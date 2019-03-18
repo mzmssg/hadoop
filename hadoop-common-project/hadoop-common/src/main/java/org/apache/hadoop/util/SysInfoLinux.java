@@ -138,7 +138,7 @@ public class SysInfoLinux extends SysInfo {
    |   1  Tesla K80           Off  | 000083D4:00:00.0 Off |                    1 |
    | N/A   32C    P8    28W / 149W |     11MiB / 11439MiB |      0%      Default |
    +-------------------------------+----------------------+----------------------+
-   |   2  Tesla K80           Off  | 00009D9C:00:00.0 Off |                    0 |
+   |   2  Tesla K80           Off  | 00009D9C:00:00.0 Off |                    2 |
    | N/A   29C    P8    25W / 149W |     12MiB / 11439MiB |      0%      Default |
    +-------------------------------+----------------------+----------------------+
    |   3  Tesla K80           Off  | 0000B6D4:00:00.0 Off |                  N/A |
@@ -169,7 +169,7 @@ public class SysInfoLinux extends SysInfo {
    +-----------------------------------------------------------------------------+
    */
   Pattern GPU_INFO_FORMAT =
-      Pattern.compile("\\s+([0-9]{1,2})\\s+[\\s\\S]*\\s+(0|1|N/A|Off)\\s+");
+      Pattern.compile("\\s+([0-9]{1,2})\\s+[\\s\\S]*\\s+(\\d+|N/A|Off)\\s+");
   Pattern GPU_MEM_FORMAT =
       Pattern.compile("([0-9]+)MiB\\s*/\\s*([0-9]+)MiB");
 
@@ -820,11 +820,16 @@ public class SysInfoLinux extends SysInfo {
               long index = Long.parseLong(mat.group(1));
               currentIndex = index;
 
-              String errCode = mat.group(2);
-              if (!errCode.equals("1")) {
+              int errCode;
+              try {
+                errCode = Integer.parseInt(mat.group(2));
+              } catch (NumberFormatException e) {
+                errCode = 0;
+              }
+              if (errCode == 0) {
                 gpuAttributeCapacity |= (1L << index);
               } else {
-                LOG.error("ignored error: gpu " + index + " ECC code is 1, will make this gpu unavailable");
+                LOG.error("ignored error: gpu " + index + " ECC code is " + mat.group(2) + ", will make this gpu unavailable");
               }
             }
           }
