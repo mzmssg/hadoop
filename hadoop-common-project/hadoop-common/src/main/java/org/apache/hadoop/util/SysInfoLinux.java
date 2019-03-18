@@ -829,7 +829,7 @@ public class SysInfoLinux extends SysInfo {
               if (errCode == 0) {
                 gpuAttributeCapacity |= (1L << index);
               } else {
-                LOG.error("ignored error: gpu " + index + " ECC code is 1, will make this gpu unavailable");
+                LOG.error("ignored error: gpu " + index + " ECC code is " + mat.group(2) + ", will make this gpu unavailable");
               }
             }
           }
