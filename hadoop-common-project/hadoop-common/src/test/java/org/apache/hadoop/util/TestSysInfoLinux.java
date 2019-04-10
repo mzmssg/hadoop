@@ -269,7 +269,7 @@ public class TestSysInfoLinux {
           "|   1  Tesla K80           Off  | 000083D4:00:00.0 Off |                    1 |\n" +
           "| N/A   32C    P8    28W / 149W |     11MiB / 11439MiB |      0%      Default |\n" +
           "+-------------------------------+----------------------+----------------------+\n" +
-          "|   2  Tesla K80           Off  | 00009D9C:00:00.0 Off |                    0 |\n" +
+          "|   2  Tesla K80           Off  | 00009D9C:00:00.0 Off |                    2 |\n" +
           "| N/A   29C    P8    25W / 149W |     12MiB / 11439MiB |      0%      Default |\n" +
           "+-------------------------------+----------------------+----------------------+\n" +
           "|   3  Tesla K80           Off  | 0000B6D4:00:00.0 Off |                  N/A |\n" +
@@ -605,8 +605,8 @@ public class TestSysInfoLinux {
   public void parsingGPUFile() throws Exception {
 
     InitialGPUTestFile();
-    assertEquals(7, plugin.getNumGPUs(false, 0));
-    assertEquals(253, plugin.getGpuAttributeCapacity(false, 0));
+    assertEquals(6, plugin.getNumGPUs(false, 0));
+    assertEquals(249, plugin.getGpuAttributeCapacity(false, 0));
   }
 
 
