@@ -160,12 +160,13 @@ public class WebHdfsHandler extends SimpleChannelInboundHandler<HttpRequest> {
     throws IOException, URISyntaxException {
     String op = params.op();
     HttpMethod method = req.getMethod();
+    boolean writeContinue = HttpHeaders.is100ContinueExpected(req);
     if (PutOpParam.Op.CREATE.name().equalsIgnoreCase(op)
       && method == PUT) {
-      onCreate(ctx);
+      onCreate(ctx, writeContinue);
     } else if (PostOpParam.Op.APPEND.name().equalsIgnoreCase(op)
       && method == POST) {
-      onAppend(ctx);
+      onAppend(ctx, writeContinue);
     } else if (GetOpParam.Op.OPEN.name().equalsIgnoreCase(op)
       && method == GET) {
       onOpen(ctx);
@@ -188,9 +189,11 @@ public class WebHdfsHandler extends SimpleChannelInboundHandler<HttpRequest> {
     ctx.writeAndFlush(resp).addListener(ChannelFutureListener.CLOSE);
   }
 
-  private void onCreate(ChannelHandlerContext ctx)
+  private void onCreate(ChannelHandlerContext ctx, boolean writeContinue)
     throws IOException, URISyntaxException {
-    writeContinueHeader(ctx);
+    if (writeContinue) {
+      writeContinueHeader(ctx);
+    }
 
     final String nnId = params.namenodeId();
     final int bufferSize = params.bufferSize();
@@ -226,8 +229,10 @@ public class WebHdfsHandler extends SimpleChannelInboundHandler<HttpRequest> {
       new HdfsWriter(dfsClient, out, resp));
   }
 
-  private void onAppend(ChannelHandlerContext ctx) throws IOException {
-    writeContinueHeader(ctx);
+  private void onAppend(ChannelHandlerContext ctx, boolean writeContinue) throws IOException {
+    if (writeContinue) {
+      writeContinueHeader(ctx);
+    }
     final String nnId = params.namenodeId();
     final int bufferSize = params.bufferSize();
 
