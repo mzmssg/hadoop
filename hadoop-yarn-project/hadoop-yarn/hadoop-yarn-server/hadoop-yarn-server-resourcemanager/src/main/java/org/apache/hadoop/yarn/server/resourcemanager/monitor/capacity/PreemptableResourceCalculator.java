@@ -128,6 +128,10 @@ public class PreemptableResourceCalculator
           totPreemptionNeeded);
     }
 
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("tot_guarant:" + tot_guarant.toNoAttributeString() + " totPreemptionNeeded:" + totPreemptionNeeded.toNoAttributeString() +
+      " totalPreemptionAllowed:" + totalPreemptionAllowed.toNoAttributeString() + " scalingFactor:" + scalingFactor);
+    }
     // assign to each queue the amount of actual preemption based on local
     // information of ideal preemption and scaling factor
     for (TempQueuePerPartition t : queues) {
@@ -198,7 +202,7 @@ public class PreemptableResourceCalculator
            */
           Resource resToObtain = qT.toBePreempted;
           if (!isReservedPreemptionCandidatesSelector) {
-            resToObtain = Resources.multiply(qT.toBePreempted,
+            resToObtain = Resources.multiplyAndRoundUp(qT.toBePreempted,
                 context.getNaturalTerminationFactor());
           }
 
@@ -209,8 +213,8 @@ public class PreemptableResourceCalculator
               LOG.debug("Queue=" + queueName + " partition=" + qT.partition
                   + " resource-to-obtain=" + resToObtain);
             }
+            qT.setActuallyToBePreempted(Resources.clone(resToObtain));
           }
-          qT.setActuallyToBePreempted(Resources.clone(resToObtain));
         } else {
           qT.setActuallyToBePreempted(Resources.none());
         }

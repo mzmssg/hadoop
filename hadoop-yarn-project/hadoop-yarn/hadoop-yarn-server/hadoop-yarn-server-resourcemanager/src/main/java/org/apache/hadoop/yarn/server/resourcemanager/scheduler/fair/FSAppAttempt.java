@@ -32,14 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.ContainerStatus;
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.ResourceRequest;
+import org.apache.hadoop.yarn.api.records.*;
 import org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger;
 import org.apache.hadoop.yarn.server.resourcemanager.RMAuditLogger.AuditConstants;
 import org.apache.hadoop.yarn.server.resourcemanager.RMContext;
@@ -850,8 +843,15 @@ public class FSAppAttempt extends SchedulerApplicationAttempt
     }
 
     // Can we allocate a container on this node?
-    if (Resources.fitsIn(capability, available)) {
+    if (Resources.fitsInWithAttribute(capability, available)) {
       // Inform the application of the new container for this request
+
+      if(capability.getGPUs() > 0) {
+        LOG.info("GPU/Ports allocation request: " + capability.toString() + " from availability: " + available.toString());
+        long allocated = Resources.allocateGPUs(capability, available);
+        capability.setGPUAttribute(allocated);
+      }
+
       RMContainer allocatedContainer =
           allocate(type, node, schedulerKey, pendingAsk,
               reservedContainer);
@@ -870,6 +870,7 @@ public class FSAppAttempt extends SchedulerApplicationAttempt
 
       // Inform the node
       node.allocateContainer(allocatedContainer);
+      LOG.info("Node information after allocating GPUs: " + node.toString());
 
       // If not running unmanaged, the first container we allocate is always
       // the AM. Set the amResource for this app and update the leaf queue's AM
@@ -891,6 +892,9 @@ public class FSAppAttempt extends SchedulerApplicationAttempt
     // The desired container won't fit here, so reserve
     // Reserve only, if app does not wait for preempted resources on the node,
     // otherwise we may end up with duplicate reservations
+    if(LOG.isDebugEnabled()) {
+      LOG.debug("isReservable:" + isReservable(capability) + " node.isPreemptedForApp:" + node.isPreemptedForApp(this));
+    }
     if (isReservable(capability) &&
         !node.isPreemptedForApp(this) &&
         reserve(pendingAsk.getPerAllocationResource(), node, reservedContainer, type, schedulerKey)) {
@@ -914,6 +918,11 @@ public class FSAppAttempt extends SchedulerApplicationAttempt
   private boolean isReservable(Resource capacity) {
     // Reserve only when the app is starved and the requested container size
     // is larger than the configured threshold
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("isStarved:" + isStarved());
+    }
+
     return isStarved() &&
         scheduler.isAtLeastReservationThreshold(
             getQueue().getPolicy().getResourceCalculator(), capacity);
@@ -936,6 +945,13 @@ public class FSAppAttempt extends SchedulerApplicationAttempt
   }
 
   private Resource assignContainer(FSSchedulerNode node, boolean reserved) {
+    // MJTHIS: this function is specific to app attempt, and selects a request to schedule for the node.
+    // As this function is called for all runnableApps in all leaf queues, it's okay to fall in scheduling
+    // the request.
+    //
+    // This function is called by several places. attemptScheduling() in FairScheduler.jave
+    // seems a main entry point.
+
     if (LOG.isDebugEnabled()) {
       LOG.debug("Node offered to app: " + getName() + " reserved: " + reserved);
     }
@@ -1166,6 +1182,11 @@ public class FSAppAttempt extends SchedulerApplicationAttempt
       fairshareStarvation =
           Resources.subtractFromNonNegative(fairDemand, getResourceUsage());
     }
+
+    if(LOG.isDebugEnabled()){
+      LOG.debug("queueName:" + this.getQueueName() + " attemptID:" + this.attemptId + " fairShareStarvation: ResourceUsage:" + getResourceUsage() + "  fairDemand:" + fairDemand + " isStarved:" + starved);
+    }
+
     return fairshareStarvation;
   }
 
@@ -1190,6 +1211,9 @@ public class FSAppAttempt extends SchedulerApplicationAttempt
    * Is application starved for fairshare or minshare.
    */
   boolean isStarved() {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("getResourceUsage:" + getResourceUsage() + " getFairShare:" + getFairShare() + " minshareStarvation:" + minshareStarvation);
+    }
     return isStarvedForFairShare() || !Resources.isNone(minshareStarvation);
   }
 

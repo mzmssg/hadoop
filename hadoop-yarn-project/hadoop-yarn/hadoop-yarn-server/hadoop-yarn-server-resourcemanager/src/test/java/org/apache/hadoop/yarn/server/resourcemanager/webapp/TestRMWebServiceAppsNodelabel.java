@@ -212,7 +212,7 @@ public class TestRMWebServiceAppsNodelabel extends JerseyTestBase {
   }
 
   private String getResource(int memory, int vcore) {
-    return "{\"memory\":" + memory + ",\"vCores\":" + vcore + "}";
+    return "{\"memory\":" + memory + ",\"vCores\":" + vcore + ",\"GPUs\":0}";
   }
 
   private void verifyResource(JSONObject partition, String partitionName,

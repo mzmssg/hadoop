@@ -826,8 +826,8 @@ public class TestAppManager{
     when(app.getApplicationType()).thenReturn("MAPREDUCE");
     when(app.getSubmitTime()).thenReturn(1000L);
     RMAppMetrics metrics =
-        new RMAppMetrics(Resource.newInstance(1234, 56),
-            10, 1, 16384, 64, 0, 0);
+        new RMAppMetrics(Resource.newInstance(1234, 56, 56),
+            10, 1, 16384, 64, 64, 0, 0);
     when(app.getRMAppMetrics()).thenReturn(metrics);
 
     RMAppManager.ApplicationSummary.SummaryBuilder summary =
@@ -844,9 +844,10 @@ public class TestAppManager{
     Assert.assertTrue(msg.contains("submitTime=1000"));
     Assert.assertTrue(msg.contains("memorySeconds=16384"));
     Assert.assertTrue(msg.contains("vcoreSeconds=64"));
+    Assert.assertTrue(msg.contains("gpuSeconds=64"));
     Assert.assertTrue(msg.contains("preemptedAMContainers=1"));
     Assert.assertTrue(msg.contains("preemptedNonAMContainers=10"));
-    Assert.assertTrue(msg.contains("preemptedResources=<memory:1234\\, vCores:56>"));
+    Assert.assertTrue(msg.contains("preemptedResources=<memory:1234\\, vCores:56\\, GPUs:56\\, GPUAttribute:0\\, ports: null>"));
     Assert.assertTrue(msg.contains("applicationType=MAPREDUCE"));
  }
   

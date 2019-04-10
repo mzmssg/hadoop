@@ -550,7 +550,6 @@ public class ParentQueue extends AbstractCSQueue {
           ActivitiesLogger.NODE.finishSkippedNodeAllocation(activitiesManager,
               node);
         }
-
         break;
       }
 

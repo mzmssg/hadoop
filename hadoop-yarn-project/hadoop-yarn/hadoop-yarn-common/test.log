@@ -1,0 +1,2 @@
+2018-06-11 10:05:34,665 DEBUG org.apache.hadoop.yarn.util.TestAdHocLogDumper: test message 1
+2018-06-11 10:05:34,665 INFO org.apache.hadoop.yarn.util.TestAdHocLogDumper: test message 2

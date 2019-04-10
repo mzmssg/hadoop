@@ -52,6 +52,8 @@ public class ClusterMetricsInfo {
 
   private long totalMB;
   private long totalVirtualCores;
+  private int totalGPUs;
+
   private int totalNodes;
   private int lostNodes;
   private int unhealthyNodes;
@@ -60,6 +62,10 @@ public class ClusterMetricsInfo {
   private int rebootedNodes;
   private int activeNodes;
   private int shutdownNodes;
+
+  private int reservedGPUs;
+  private int availableGPUs;
+  private int allocatedGPUs;
 
   public ClusterMetricsInfo() {
   } // JAXB needs this
@@ -87,6 +93,10 @@ public class ClusterMetricsInfo {
     this.availableVirtualCores = metrics.getAvailableVirtualCores();
     this.allocatedVirtualCores = metrics.getAllocatedVirtualCores();
 
+    this.reservedGPUs = metrics.getReservedGPUs();
+    this.availableGPUs = metrics.getAvailableGPUs();
+    this.allocatedGPUs = metrics.getAllocatedGPUs();
+
     this.containersAllocated = metrics.getAllocatedContainers();
     this.containersPending = metrics.getPendingContainers();
     this.containersReserved = metrics.getReservedContainers();
@@ -95,10 +105,13 @@ public class ClusterMetricsInfo {
       this.totalMB = availableMB + allocatedMB + reservedMB;
       this.totalVirtualCores =
           availableVirtualCores + allocatedVirtualCores + containersReserved;
+      this.totalGPUs = availableGPUs + allocatedGPUs + reservedGPUs;
     } else {
       this.totalMB = availableMB + allocatedMB;
       this.totalVirtualCores = availableVirtualCores + allocatedVirtualCores;
+      this.totalGPUs = availableGPUs + allocatedGPUs;
     }
+
     this.activeNodes = clusterMetrics.getNumActiveNMs();
     this.lostNodes = clusterMetrics.getNumLostNMs();
     this.unhealthyNodes = clusterMetrics.getUnhealthyNMs();
@@ -158,6 +171,18 @@ public class ClusterMetricsInfo {
     return this.allocatedVirtualCores;
   }
 
+  public int getReservedGPUs() {
+    return this.reservedGPUs;
+  }
+
+  public int getAvailableGPUs() {
+    return this.availableGPUs;
+  }
+
+  public int getAllocatedGPUs() {
+    return this.allocatedGPUs;
+  }
+
   public int getContainersAllocated() {
     return this.containersAllocated;
   }
@@ -176,6 +201,10 @@ public class ClusterMetricsInfo {
 
   public long getTotalVirtualCores() {
     return this.totalVirtualCores;
+  }
+
+  public int getTotalGPUs() {
+    return this.totalGPUs;
   }
 
   public int getTotalNodes() {
@@ -266,6 +295,18 @@ public class ClusterMetricsInfo {
     this.allocatedVirtualCores = allocatedVirtualCores;
   }
 
+  public void setReservedGPUs(int reservedGPUs) {
+    this.reservedGPUs = reservedGPUs;
+  }
+
+  public void setAvailableGPUs(int availableGPUs) {
+    this.availableGPUs = availableGPUs;
+  }
+
+  public void setAllocatedGPUs(int allocatedGPUs) {
+    this.allocatedGPUs = allocatedGPUs;
+  }
+
   public void setContainersAllocated(int containersAllocated) {
     this.containersAllocated = containersAllocated;
   }
@@ -276,6 +317,10 @@ public class ClusterMetricsInfo {
 
   public void setTotalVirtualCores(long totalVirtualCores) {
     this.totalVirtualCores = totalVirtualCores;
+  }
+
+  public void setTotalGPUs(int totalGPUs) {
+    this.totalGPUs = totalGPUs;
   }
 
   public void setTotalNodes(int totalNodes) {

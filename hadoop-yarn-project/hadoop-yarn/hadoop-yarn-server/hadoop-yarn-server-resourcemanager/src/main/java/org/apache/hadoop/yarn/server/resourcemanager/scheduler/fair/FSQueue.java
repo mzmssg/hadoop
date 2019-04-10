@@ -270,6 +270,10 @@ public abstract class FSQueue implements Queue, Schedulable {
     stats.setAllocatedVCores(getMetrics().getAllocatedVirtualCores());
     stats.setPendingVCores(getMetrics().getPendingVirtualCores());
     stats.setReservedVCores(getMetrics().getReservedVirtualCores());
+    stats.setAvailableGPUs(getMetrics().getAvailableGPUs());
+    stats.setAllocatedGPUs(getMetrics().getAllocatedGPUs());
+    stats.setPendingGPUs(getMetrics().getPendingGPUs());
+    stats.setReservedGPUs(getMetrics().getReservedGPUs());
     stats.setAllocatedContainers(getMetrics().getAllocatedContainers());
     stats.setPendingContainers(getMetrics().getPendingContainers());
     stats.setReservedContainers(getMetrics().getReservedContainers());

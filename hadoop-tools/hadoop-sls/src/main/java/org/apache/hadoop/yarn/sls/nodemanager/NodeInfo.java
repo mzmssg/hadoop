@@ -39,6 +39,7 @@ import org.apache.hadoop.yarn.server.api.protocolrecords.NodeHeartbeatResponse;
 import org.apache.hadoop.yarn.server.api.records.OpportunisticContainersStatus;
 import org.apache.hadoop.yarn.server.resourcemanager.nodelabels.RMNodeLabelsManager;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode.RMNode;
+import org.apache.hadoop.yarn.api.records.ValueRanges;
 import org.apache.hadoop.yarn.server.resourcemanager.rmnode
         .UpdatedContainerInfo;
 
@@ -82,6 +83,7 @@ public class NodeInfo {
       toCleanUpApplications = new ArrayList<ApplicationId>();
       toCleanUpContainers = new ArrayList<ContainerId>();
       runningApplications = new ArrayList<ApplicationId>();
+
     }
 
     public NodeId getNodeID() {
@@ -206,6 +208,15 @@ public class NodeInfo {
     }
 
     @Override
+    public void setLocalUsedPortsSnapshot(ValueRanges ports) {
+    }
+
+    @Override
+    public ValueRanges getAvailablePorts() {
+      return null;
+    }
+
+    @Override
     public long getUntrackedTimeStamp() {
       return 0;
     }
@@ -221,6 +232,22 @@ public class NodeInfo {
 
     @Override
     public Resource getPhysicalResource() {
+      return null;
+    }
+    public void setAvailablePorts(ValueRanges ports) {
+    }
+
+    @Override
+    public ValueRanges getContainerAllocatedPorts() {
+      return null;
+    }
+
+    @Override
+    public void setContainerAllocatedPorts(ValueRanges ports) {
+    }
+
+    @Override
+    public ValueRanges getLocalUsedPortsSnapshot() {
       return null;
     }
   }

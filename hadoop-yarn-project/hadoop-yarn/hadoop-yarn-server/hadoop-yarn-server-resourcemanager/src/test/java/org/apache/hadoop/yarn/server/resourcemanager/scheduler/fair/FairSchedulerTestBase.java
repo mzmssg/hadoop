@@ -17,6 +17,8 @@
  */
 package org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -46,6 +48,7 @@ import org.apache.hadoop.yarn.server.resourcemanager.rmapp.attempt.RMAppAttemptM
 
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ContainerUpdates;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.ResourceScheduler;
+import org.apache.hadoop.yarn.server.resourcemanager.scheduler.capacity.CapacityScheduler;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.AppAddedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.AppAttemptAddedSchedulerEvent;
 import org.apache.hadoop.yarn.server.resourcemanager.scheduler.event.NodeAddedSchedulerEvent;
@@ -63,6 +66,7 @@ public class FairSchedulerTestBase {
   public final static String TEST_DIR =
       new File(System.getProperty("test.build.data", "/tmp")).getAbsolutePath();
 
+  private static final Log LOG = LogFactory.getLog(FairSchedulerTestBase.class);
   private static RecordFactory
       recordFactory = RecordFactoryProvider.getRecordFactory(null);
 
@@ -111,15 +115,29 @@ public class FairSchedulerTestBase {
   protected ResourceRequest createResourceRequest(
       int memory, String host, int priority, int numContainers,
       boolean relaxLocality) {
-    return createResourceRequest(memory, 1, host, priority, numContainers,
+    return createResourceRequest(memory, 1, 0, host, priority, numContainers,
         relaxLocality);
   }
 
   protected ResourceRequest createResourceRequest(
-      int memory, int vcores, String host, int priority, int numContainers,
+      int memory, int vcores, int gpus, String host, int priority, int numContainers,
       boolean relaxLocality) {
     ResourceRequest request = recordFactory.newRecordInstance(ResourceRequest.class);
-    request.setCapability(BuilderUtils.newResource(memory, vcores));
+    request.setCapability(BuilderUtils.newResource(memory, vcores, gpus));
+    request.setResourceName(host);
+    request.setNumContainers(numContainers);
+    Priority prio = recordFactory.newRecordInstance(Priority.class);
+    prio.setPriority(priority);
+    request.setPriority(prio);
+    request.setRelaxLocality(relaxLocality);
+    return request;
+  }
+
+  protected ResourceRequest createResourceRequest(
+          int memory, int vcores, int gpus, int GPUAttribute, String host, int priority, int numContainers,
+          boolean relaxLocality) {
+    ResourceRequest request = recordFactory.newRecordInstance(ResourceRequest.class);
+    request.setCapability(BuilderUtils.newResource(memory, vcores, gpus, GPUAttribute));
     request.setResourceName(host);
     request.setNumContainers(numContainers);
     Priority prio = recordFactory.newRecordInstance(Priority.class);
@@ -140,8 +158,8 @@ public class FairSchedulerTestBase {
   }
 
   protected ApplicationAttemptId createSchedulingRequest(
-      int memory, int vcores, String queueId, String userId) {
-    return createSchedulingRequest(memory, vcores, queueId, userId, 1);
+      int memory, int vcores, int gpus, String queueId, String userId) {
+    return createSchedulingRequest(memory, vcores, gpus, queueId, userId, 1);
   }
 
   protected ApplicationAttemptId createSchedulingRequest(
@@ -150,18 +168,18 @@ public class FairSchedulerTestBase {
   }
 
   protected ApplicationAttemptId createSchedulingRequest(
-      int memory, int vcores, String queueId, String userId, int numContainers) {
-    return createSchedulingRequest(memory, vcores, queueId, userId, numContainers, 1);
+      int memory, int vcores, int gpus, String queueId, String userId, int numContainers) {
+    return createSchedulingRequest(memory, vcores, gpus, queueId, userId, numContainers, 1);
   }
 
   protected ApplicationAttemptId createSchedulingRequest(
       int memory, String queueId, String userId, int numContainers, int priority) {
-    return createSchedulingRequest(memory, 1, queueId, userId, numContainers,
+    return createSchedulingRequest(memory, 1, 0, queueId, userId, numContainers,
         priority);
   }
 
   protected ApplicationAttemptId createSchedulingRequest(
-      int memory, int vcores, String queueId, String userId, int numContainers,
+      int memory, int vcores, int gpus, String queueId, String userId, int numContainers,
       int priority) {
     ApplicationAttemptId id = createAppAttemptId(this.APP_ID++, this.ATTEMPT_ID++);
     scheduler.addApplication(id.getApplicationId(), queueId, userId, false);
@@ -171,7 +189,7 @@ public class FairSchedulerTestBase {
       scheduler.addApplicationAttempt(id, false, false);
     }
     List<ResourceRequest> ask = new ArrayList<ResourceRequest>();
-    ResourceRequest request = createResourceRequest(memory, vcores, ResourceRequest.ANY,
+    ResourceRequest request = createResourceRequest(memory, vcores, gpus, ResourceRequest.ANY,
         priority, numContainers, true);
     ask.add(request);
 
@@ -229,8 +247,8 @@ public class FairSchedulerTestBase {
   }
 
   protected void createSchedulingRequestExistingApplication(
-      int memory, int vcores, int priority, ApplicationAttemptId attId) {
-    ResourceRequest request = createResourceRequest(memory, vcores, ResourceRequest.ANY,
+      int memory, int vcores, int gpus, int priority, ApplicationAttemptId attId) {
+    ResourceRequest request = createResourceRequest(memory, vcores, gpus, ResourceRequest.ANY,
         priority, 1, true);
     createSchedulingRequestExistingApplication(request, attId);
   }
@@ -306,9 +324,21 @@ public class FairSchedulerTestBase {
    * @param cores cpu capacity of the node
    */
   protected void addNode(int memory, int cores) {
+    addNode(memory, cores, 0);
+  }
+
+  /**
+   * Add a node to the cluster and track the nodes in {@link #rmNodes}.
+   * @param memory memory capacity of the node
+   * @param cores cpu capacity of the node
+   * @param gpus gpu capacity of the node
+   */
+  protected void addNode(int memory, int cores, int gpus) {
     int id = rmNodes.size() + 1;
+    long gpuAttribute = 1;
+    gpuAttribute = (gpuAttribute << gpus) - 1;
     RMNode node =
-        MockNodes.newNodeInfo(1, Resources.createResource(memory, cores), id,
+        MockNodes.newNodeInfo(1, Resources.createResource(memory, cores, gpus, gpuAttribute), id,
             "127.0.0." + id);
     scheduler.handle(new NodeAddedSchedulerEvent(node));
     rmNodes.add(node);

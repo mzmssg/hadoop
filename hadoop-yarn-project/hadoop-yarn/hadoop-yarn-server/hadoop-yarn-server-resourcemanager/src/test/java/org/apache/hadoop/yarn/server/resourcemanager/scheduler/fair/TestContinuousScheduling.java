@@ -107,7 +107,7 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
     // Add one node
     String host = "127.0.0.1";
     RMNode node1 = MockNodes.newNodeInfo(
-        1, Resources.createResource(4096, 4), 1, host);
+        1, Resources.createResource(4096, 4, 4, 15), 1, host);
     NodeAddedSchedulerEvent nodeEvent1 = new NodeAddedSchedulerEvent(node1);
     scheduler.handle(nodeEvent1);
     NodeUpdateSchedulerEvent nodeUpdateEvent = new NodeUpdateSchedulerEvent(node1);
@@ -120,7 +120,7 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
     scheduler.addApplication(appAttemptId.getApplicationId(), "queue11", "user11", false);
     scheduler.addApplicationAttempt(appAttemptId, false, false);
     List<ResourceRequest> ask = new ArrayList<>();
-    ask.add(createResourceRequest(1024, 1, ResourceRequest.ANY, 1, 1, true));
+    ask.add(createResourceRequest(1024, 1, 1, ResourceRequest.ANY, 1, 1, true));
     scheduler.allocate(
         appAttemptId, ask, new ArrayList<ContainerId>(),
         null, null, NULL_UPDATE_REQUESTS);
@@ -134,12 +134,12 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
   public void testSortedNodes() throws Exception {
     // Add two nodes
     RMNode node1 =
-        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8), 1,
+        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8, 8, 255), 1,
             "127.0.0.1");
     NodeAddedSchedulerEvent nodeEvent1 = new NodeAddedSchedulerEvent(node1);
     scheduler.handle(nodeEvent1);
     RMNode node2 =
-        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8), 2,
+        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8, 8, 255), 2,
             "127.0.0.2");
     NodeAddedSchedulerEvent nodeEvent2 = new NodeAddedSchedulerEvent(node2);
     scheduler.handle(nodeEvent2);
@@ -147,6 +147,7 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
     // available resource
     Assert.assertEquals(scheduler.getClusterResource().getMemorySize(), 16 * 1024);
     Assert.assertEquals(scheduler.getClusterResource().getVirtualCores(), 16);
+    Assert.assertEquals(scheduler.getClusterResource().getGPUs(), 16);
 
     // send application request
     ApplicationAttemptId appAttemptId =
@@ -158,25 +159,25 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
     scheduler.addApplicationAttempt(appAttemptId, false, false);
     List<ResourceRequest> ask = new ArrayList<>();
     ResourceRequest request =
-        createResourceRequest(1024, 1, ResourceRequest.ANY, 1, 1, true);
+        createResourceRequest(1024, 1, 1, ResourceRequest.ANY, 1, 1, true);
     ask.add(request);
     scheduler.allocate(appAttemptId, ask,
         new ArrayList<ContainerId>(), null, null, NULL_UPDATE_REQUESTS);
     triggerSchedulingAttempt();
 
     FSAppAttempt app = scheduler.getSchedulerApp(appAttemptId);
-    checkAppConsumption(app, Resources.createResource(1024, 1));
+    checkAppConsumption(app, Resources.createResource(1024, 1, 1));
 
     // another request
     request =
-        createResourceRequest(1024, 1, ResourceRequest.ANY, 2, 1, true);
+        createResourceRequest(1024, 1, 1, ResourceRequest.ANY, 2, 1, true);
     ask.clear();
     ask.add(request);
     scheduler.allocate(appAttemptId, ask,
         new ArrayList<ContainerId>(), null, null, NULL_UPDATE_REQUESTS);
     triggerSchedulingAttempt();
 
-    checkAppConsumption(app, Resources.createResource(2048,2));
+    checkAppConsumption(app, Resources.createResource(2048, 2, 2, 3));
 
     // 2 containers should be assigned to 2 nodes
     Set<NodeId> nodes = new HashSet<NodeId>();
@@ -212,12 +213,12 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
 
     // Add two nodes
     RMNode node1 =
-        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8), 1,
+        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8, 8, 255), 1,
             "127.0.0.1");
     NodeAddedSchedulerEvent nodeEvent1 = new NodeAddedSchedulerEvent(node1);
     scheduler.handle(nodeEvent1);
     RMNode node2 =
-        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8), 2,
+        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8, 8, 255), 2,
             "127.0.0.2");
     NodeAddedSchedulerEvent nodeEvent2 = new NodeAddedSchedulerEvent(node2);
     scheduler.handle(nodeEvent2);
@@ -266,7 +267,7 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
         !spyScheduler.isContinuousSchedulingEnabled());
     // Add one node
     RMNode node1 =
-        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8), 1,
+        MockNodes.newNodeInfo(1, Resources.createResource(8 * 1024, 8, 4, 15), 1,
             "127.0.0.1");
     NodeAddedSchedulerEvent nodeEvent1 = new NodeAddedSchedulerEvent(node1);
     spyScheduler.handle(nodeEvent1);
@@ -355,14 +356,14 @@ public class TestContinuousScheduling extends FairSchedulerTestBase {
 
     String hostName = "127.0.0.1";
     RMNode node1 =
-        MockNodes.newNodeInfo(1, Resources.createResource(16 * 1024, 16), 1,
+        MockNodes.newNodeInfo(1, Resources.createResource(16 * 1024, 16, 4, 15), 1,
         hostName);
     List<ResourceRequest> ask1 = new ArrayList<>();
     request1 =
-        createResourceRequest(1024, 8, node1.getRackName(), priorityValue, 1,
+        createResourceRequest(1024, 8, 1, node1.getRackName(), priorityValue, 1,
         true);
     request2 =
-        createResourceRequest(1024, 8, ResourceRequest.ANY, priorityValue, 1,
+        createResourceRequest(1024, 8, 1, ResourceRequest.ANY, priorityValue, 1,
         true);
     ask1.add(request1);
     ask1.add(request2);
