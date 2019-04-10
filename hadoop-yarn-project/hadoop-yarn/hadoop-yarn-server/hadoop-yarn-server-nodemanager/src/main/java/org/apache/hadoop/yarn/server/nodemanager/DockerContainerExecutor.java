@@ -98,7 +98,7 @@ public class DockerContainerExecutor extends ContainerExecutor {
   //containername:0.1 or
   //containername
   public static final String DOCKER_IMAGE_PATTERN =
-    "^(([\\w\\.-]+)(:\\d+)*\\/)?[\\w\\.:-]+$";
+          "^(([\\w\\.-]+)(:\\d+)*\\/)?([\\w\\.-]+\\/)?[\\w\\.:-]+$";
 
   private final FileContext lfs;
   private final Pattern dockerImagePattern;
@@ -127,7 +127,12 @@ public class DockerContainerExecutor extends ContainerExecutor {
     String dockerExecutor = getConf().get(
       YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_EXEC_NAME,
       YarnConfiguration.NM_DEFAULT_DOCKER_CONTAINER_EXECUTOR_EXEC_NAME);
-    if (!new File(dockerExecutor).exists()) {
+    // /use/bin/docker -H=tcp://0.0.0.0:xx is also a valid docker executor
+    String[] arr = dockerExecutor.split("\\s");
+    if (LOG.isDebugEnabled()) {
+        LOG.debug("dockerExecutor: " + dockerExecutor);
+    }
+    if (!new File(arr[0]).exists()) {
       throw new IllegalStateException(
         "Invalid docker exec path: " + dockerExecutor);
     }
@@ -181,8 +186,11 @@ public class DockerContainerExecutor extends ContainerExecutor {
 
     //Variables for the launch environment can be injected from the command-line
     //while submitting the application
-    String containerImageName = container.getLaunchContext().getEnvironment()
-      .get(YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_IMAGE_NAME);
+    //modify get image from configuration rather than env
+    String containerImageName = getConf().get(
+            YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_IMAGE_NAME);
+
+    //
     if (LOG.isDebugEnabled()) {
       LOG.debug("containerImageName from launchContext: " + containerImageName);
     }
@@ -240,19 +248,27 @@ public class DockerContainerExecutor extends ContainerExecutor {
     //--net=host allows the container to take on the host's network stack
     //--name sets the Docker Container name to the YARN containerId string
     //-v is used to bind mount volumes for local, log and work dirs.
+    //-w sets the work dir inside the container
+    //add docker option
+    String dockerOption = getConf().get(
+            YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_EXEC_OPTION);
     String commandStr = commands.append(dockerExecutor)
       .append(" ")
       .append("run")
       .append(" ")
-      .append("--rm --net=host")
+      .append("--rm --net=host --pid=host --privileged=true")
+      .append(" ")
+      .append("-w " + containerWorkDir.toUri().getPath().toString())
+      .append(" ")
+      .append(dockerOption)
       .append(" ")
       .append(" --name " + containerIdStr)
-      .append(localDirMount)
-      .append(logDirMount)
-      .append(containerWorkDirMount)
       .append(" ")
       .append(containerImageName)
       .toString();
+    if (LOG.isDebugEnabled()) {
+        LOG.debug("Docker run command: " + commandStr);
+    }
     //Get the pid of the process which has been launched as a docker container
     //using docker inspect
     String dockerPidScript = "`" + dockerExecutor +
@@ -597,13 +613,28 @@ public class DockerContainerExecutor extends ContainerExecutor {
         // We need to do a move as writing to a file is not atomic
         // Process reading a file being written to may get garbled data
         // hence write pid to tmp file first followed by a mv
+        // Move dockerpid command to backend, avoid blocking docker run command
+        // need to improve it with publisher mode
+        // Ref: https://issues.apache.org/jira/browse/YARN-3080
         pout.println("#!/usr/bin/env bash");
         pout.println();
+        pout.println("{");
+        pout.println("n=10");
+        pout.println("while [ $n -gt 0 ]; do");
+        pout.println("let n=$n-1");
+        pout.println("sleep 5");
         pout.println("echo "+ dockerPidScript +" > " + pidFile.toString()
           + ".tmp");
+        pout.println("[ -n \"$(cat \"" + pidFile.toString()
+                + ".tmp\")\" ] && break");
+        pout.println("done");
         pout.println("/bin/mv -f " + pidFile.toString() + ".tmp " + pidFile);
-        pout.println(dockerCommand + " bash \"" +
-          launchDst.toUri().getPath().toString() + "\"");
+        pout.println("} &");
+        //Add exec command before launch_script.
+        String scriptCommand = getConf().get(
+                YarnConfiguration.NM_DOCKER_CONTAINER_EXECUTOR_SCRIPT_COMMAND);
+        pout.println(dockerCommand + " bash -c '" + scriptCommand + " && bash \"" +
+                launchDst.toUri().getPath().toString() + "\"'");
       } finally {
         IOUtils.cleanupWithLogger(LOG, pout, out);
       }
