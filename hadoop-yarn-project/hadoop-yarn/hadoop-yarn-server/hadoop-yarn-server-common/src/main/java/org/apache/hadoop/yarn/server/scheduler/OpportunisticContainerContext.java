@@ -128,6 +128,8 @@ public class OpportunisticContainerContext {
     for (ResourceRequest request : resourceAsks) {
       SchedulerRequestKey schedulerKey = SchedulerRequestKey.create(request);
 
+      // 每个request会包含一个list的ResourceRequest，通过priority和reqeustID做唯一标识，这里把他们存入字典，字典值又是一个字典
+      // 子字典的key是resource，value是eReq
       Map<Resource, EnrichedResourceRequest> reqMap =
           outstandingOpReqs.get(schedulerKey);
       if (reqMap == null) {
@@ -137,10 +139,13 @@ public class OpportunisticContainerContext {
 
       EnrichedResourceRequest eReq = reqMap.get(request.getCapability());
       if (eReq == null) {
+        //说明没有添加过该ResourceRequest
         eReq = new EnrichedResourceRequest(request);
         reqMap.put(request.getCapability(), eReq);
       }
       // Set numContainers only for ANY request
+      // eReq中包了一个新的ResourceRequest，这里只会把any类型的数量copy到eReq中的reqeust，rack和node的不会被拷贝，只记录在eReq中，
+      // 但上一步构造其实就已经包括了request进去，存疑这里
       if (ResourceRequest.isAnyLocation(request.getResourceName())) {
         eReq.getRequest().setResourceName(ResourceRequest.ANY);
         eReq.getRequest().setNumContainers(request.getNumContainers());
@@ -166,9 +171,11 @@ public class OpportunisticContainerContext {
    */
   public void matchAllocationToOutstandingRequest(Resource capability,
       List<Allocation> allocations) {
+    // 对分配下的container做循环
     for (OpportunisticContainerAllocator.Allocation allocation : allocations) {
       SchedulerRequestKey schedulerKey =
           SchedulerRequestKey.extractFrom(allocation.getContainer());
+      // asks是还没有满足的request
       Map<Resource, EnrichedResourceRequest> asks =
           outstandingOpReqs.get(schedulerKey);
 
@@ -176,6 +183,7 @@ public class OpportunisticContainerContext {
         continue;
       }
 
+      // err是request中某种大小的资源的请求
       EnrichedResourceRequest err = asks.get(capability);
       if (err != null) {
         int numContainers = err.getRequest().getNumContainers();
@@ -187,6 +195,7 @@ public class OpportunisticContainerContext {
             outstandingOpReqs.remove(schedulerKey);
           }
         } else {
+          // numContainer还没完全满足，则从对应请求中移除一个请求
           if (!ResourceRequest.isAnyLocation(allocation.getResourceName())) {
             err.removeLocation(allocation.getResourceName());
           }

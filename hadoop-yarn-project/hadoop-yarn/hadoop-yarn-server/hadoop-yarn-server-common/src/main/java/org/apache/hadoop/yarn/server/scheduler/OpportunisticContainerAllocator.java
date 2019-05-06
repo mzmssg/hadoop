@@ -215,6 +215,7 @@ public class OpportunisticContainerAllocator {
   private final BaseContainerTokenSecretManager tokenSecretManager;
 
   static class Allocation {
+    // 记录container和其对应的类型：any，rack or node-local
     private final Container container;
     private final String resourceName;
 
@@ -258,6 +259,7 @@ public class OpportunisticContainerAllocator {
     }
 
     void removeLocation(String location) {
+      // 从rank或node中找到满足location条件的请求
       Map<String, AtomicInteger> m = rackLocations;
       AtomicInteger count = m.get(location);
       if (count == null) {
@@ -307,15 +309,18 @@ public class OpportunisticContainerAllocator {
       String appSubmitter) throws YarnException {
 
     // Update black list.
+    // 第一步先更新app的blacklist
     if (blackList != null) {
       opportContext.getBlacklist().removeAll(blackList.getBlacklistRemovals());
       opportContext.getBlacklist().addAll(blackList.getBlacklistAdditions());
     }
 
     // Add OPPORTUNISTIC requests to the outstanding ones.
+    // 然后把request加入到ctx中
     opportContext.addToOutstandingReqs(oppResourceReqs);
 
     Set<String> nodeBlackList = new HashSet<>(opportContext.getBlacklist());
+    // 记录分配下的container
     List<Container> allocatedContainers = new ArrayList<>();
 
     // Satisfy the outstanding OPPORTUNISTIC requests.
@@ -323,6 +328,7 @@ public class OpportunisticContainerAllocator {
     while (continueLoop) {
       continueLoop = false;
       List<Map<Resource, List<Allocation>>> allocations = new ArrayList<>();
+      // 根据优先级降序尝试分配
       for (SchedulerRequestKey schedulerKey :
           opportContext.getOutstandingOpReqs().descendingKeySet()) {
         // Allocated containers :
@@ -331,9 +337,11 @@ public class OpportunisticContainerAllocator {
         //          might be different than what is requested, which is why
         //          we need the requested capability (key) to match against
         //          the outstanding reqs)
+        // 分配函数
         Map<Resource, List<Allocation>> allocation = allocate(
             rmIdentifier, opportContext, schedulerKey, applicationAttemptId,
             appSubmitter, nodeBlackList);
+        // 本轮成功分配了，继续尝试
         if (allocation.size() > 0) {
           allocations.add(allocation);
           continueLoop = true;
@@ -389,9 +397,11 @@ public class OpportunisticContainerAllocator {
       return;
     }
     ResourceRequest anyAsk = enrichedAsk.getRequest();
+    // 这里allocations肯定为空
     int toAllocate = anyAsk.getNumContainers()
         - (allocations.isEmpty() ? 0 :
             allocations.get(anyAsk.getCapability()).size());
+    // 默认是1
     toAllocate = Math.min(toAllocate,
         appParams.getMaxAllocationsPerSchedulerKeyPerRound());
     int numAllocated = 0;
@@ -401,14 +411,17 @@ public class OpportunisticContainerAllocator {
     // * From loop == 2 onwards, we revert to off switch allocations.
     int loopIndex = OFF_SWITCH_LOOP;
     if (enrichedAsk.getNodeLocations().size() > 0) {
+      // 有nodelocal请求优先
       loopIndex = NODE_LOCAL_LOOP;
     }
     while (numAllocated < toAllocate) {
+      // 对于any类型，这里就是all nodes
       Collection<RemoteNode> nodeCandidates =
           findNodeCandidates(loopIndex, allNodes, blacklist, enrichedAsk);
       for (RemoteNode rNode : nodeCandidates) {
         String rNodeHost = rNode.getNodeId().getHost();
         // Ignore black list
+        // 挨个node做遍历，忽略blacklist node
         if (blacklist.contains(rNodeHost)) {
           LOG.info("Nodes for scheduling has a blacklisted node" +
               " [" + rNodeHost + "]..");
@@ -444,6 +457,7 @@ public class OpportunisticContainerAllocator {
           break;
         }
       }
+      // 一轮循环走完，relax到下一级别
       if (loopIndex == NODE_LOCAL_LOOP &&
           enrichedAsk.getRackLocations().size() > 0) {
         loopIndex = RACK_LOCAL_LOOP;
@@ -452,6 +466,7 @@ public class OpportunisticContainerAllocator {
       }
       // Handle case where there are no nodes remaining after blacklist is
       // considered.
+      // 三轮循环都走完，break
       if (loopIndex > OFF_SWITCH_LOOP && numAllocated == 0) {
         LOG.warn("Unable to allocate any opportunistic containers.");
         break;

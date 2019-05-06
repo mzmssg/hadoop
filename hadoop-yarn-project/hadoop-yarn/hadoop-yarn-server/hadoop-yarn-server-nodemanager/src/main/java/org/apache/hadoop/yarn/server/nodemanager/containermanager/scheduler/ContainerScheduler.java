@@ -349,6 +349,7 @@ public class ContainerScheduler extends AbstractService implements
       Collection<Container> containersToBeStarted, boolean force) {
     Iterator<Container> cIter = containersToBeStarted.iterator();
     boolean resourcesAvailable = true;
+    // FIFO, 前面的不执行后面的就排队
     while (cIter.hasNext() && resourcesAvailable) {
       Container container = cIter.next();
       if (tryStartContainer(container, force)) {
@@ -441,6 +442,7 @@ public class ContainerScheduler extends AbstractService implements
 
       // if the guaranteed container is queued, we need to preempt opportunistic
       // containers for make room for it
+      // preempt oppor containers
       if (queuedGuaranteedContainers.containsKey(container.getContainerId())) {
         reclaimOpportunisticContainerResources(container);
       }

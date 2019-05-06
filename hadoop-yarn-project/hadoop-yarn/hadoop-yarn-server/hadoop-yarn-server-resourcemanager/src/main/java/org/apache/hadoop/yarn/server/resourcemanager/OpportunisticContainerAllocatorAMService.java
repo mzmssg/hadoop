@@ -89,6 +89,7 @@ import java.util.List;
  * clients (AMs and AMRMProxy request interceptors) that understand the
  * DistributedSchedulingProtocol.
  */
+// ApplicationMasterService的子类
 public class OpportunisticContainerAllocatorAMService
     extends ApplicationMasterService implements DistributedSchedulingAMProtocol,
     EventHandler<SchedulerEvent> {
@@ -131,6 +132,7 @@ public class OpportunisticContainerAllocatorAMService
       final SchedulerApplicationAttempt appAttempt = ((AbstractYarnScheduler)
           getScheduler()).getApplicationAttempt(applicationAttemptId);
       if (appAttempt.getOpportunisticContainerContext() == null) {
+        // 每一个request会有一个opCtx
         OpportunisticContainerContext opCtx =
             new OpportunisticContainerContext();
         opCtx.setContainerIdGenerator(new OpportunisticContainerAllocator
@@ -151,6 +153,7 @@ public class OpportunisticContainerAllocatorAMService
             tokenExpiryInterval);
         appAttempt.setOpportunisticContainerContext(opCtx);
       }
+      // 继续下一个processor的注册，也就是正常配置中的processor
       nextProcessor.registerApplicationMaster(
           applicationAttemptId, request, response);
     }
@@ -160,6 +163,7 @@ public class OpportunisticContainerAllocatorAMService
         AllocateRequest request, AllocateResponse response)
         throws YarnException {
       // Partition requests to GUARANTEED and OPPORTUNISTIC.
+      // 拦截原始请求，分成两组，所有request共享allocator，独享opCtx
       OpportunisticContainerAllocator.PartitionedResourceRequests
           partitionedAsks =
           oppContainerAllocator.partitionAskList(request.getAskList());
@@ -171,6 +175,7 @@ public class OpportunisticContainerAllocatorAMService
 
       OpportunisticContainerContext oppCtx =
           appAttempt.getOpportunisticContainerContext();
+      // 选取10（默认）load最轻的node，load方式为queue长度
       oppCtx.updateNodeList(getLeastLoadedNodes());
 
       List<Container> oppContainers =
@@ -181,6 +186,7 @@ public class OpportunisticContainerAllocatorAMService
 
       // Create RMContainers and update the NMTokens.
       if (!oppContainers.isEmpty()) {
+        // 创建RMcontainer并加入监控，与guarantee的container进入同样的状态机
         handleNewContainers(oppContainers, false);
         appAttempt.updateNMTokens(oppContainers);
         ApplicationMasterServiceUtils.addToAllocatedContainers(
@@ -188,6 +194,7 @@ public class OpportunisticContainerAllocatorAMService
       }
 
       // Allocate GUARANTEED containers.
+      // 提取出GUARANTEED的request，继续走原来方法
       request.setAskList(partitionedAsks.getGuaranteed());
       nextProcessor.allocate(appAttemptId, request, response);
     }
@@ -224,6 +231,7 @@ public class OpportunisticContainerAllocatorAMService
                 YarnConfiguration.
                     DEFAULT_NM_CONTAINER_QUEUING_LOAD_COMPARATOR));
 
+    // 默认以queue长度作为选取load的依据
     NodeQueueLoadMonitor topKSelector =
         new NodeQueueLoadMonitor(nodeSortInterval, comparator);
 
@@ -262,6 +270,7 @@ public class OpportunisticContainerAllocatorAMService
   @Override
   public Server getServer(YarnRPC rpc, Configuration serverConf,
       InetSocketAddress addr, AMRMTokenSecretManager secretManager) {
+    // Distributing scheduler enabled时拦截RPC请求
     if (YarnConfiguration.isDistSchedulingEnabled(serverConf)) {
       Server server = rpc.getServer(DistributedSchedulingAMProtocol.class, this,
           addr, serverConf, secretManager,
@@ -284,6 +293,7 @@ public class OpportunisticContainerAllocatorAMService
       Configuration conf) {
     List<ApplicationMasterServiceProcessor> retVal =
         super.getProcessorList(conf);
+    // 从AMService获取configuration，并添加oppor processor
     retVal.add(new OpportunisticAMSProcessor());
     return retVal;
   }
@@ -335,6 +345,7 @@ public class OpportunisticContainerAllocatorAMService
       RMContainer rmContainer =
           SchedulerUtils.createOpportunisticRmContainer(
               rmContext, container, isRemotelyAllocated);
+      // 该事件是AM发送allocate函数后拉取到自己的container时触发的
       rmContainer.handle(
           new RMContainerEvent(container.getId(),
               RMContainerEventType.ACQUIRED));
