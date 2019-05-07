@@ -33,6 +33,7 @@ import org.apache.hadoop.yarn.api.protocolrecords.FinishApplicationMasterRespons
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.yarn.api.records.ResourceRequest;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.hadoop.yarn.security.AMRMTokenIdentifier;
 import org.apache.hadoop.yarn.server.api.DistributedSchedulingAMProtocol;
@@ -164,6 +165,7 @@ public class OpportunisticContainerAllocatorAMService
         throws YarnException {
       // Partition requests to GUARANTEED and OPPORTUNISTIC.
       // 拦截原始请求，分成两组，所有request共享allocator，独享opCtx
+      LOG.debug("Receive request from: " + appAttemptId.getAttemptId());
       OpportunisticContainerAllocator.PartitionedResourceRequests
           partitionedAsks =
           oppContainerAllocator.partitionAskList(request.getAskList());
@@ -173,11 +175,25 @@ public class OpportunisticContainerAllocatorAMService
           ((AbstractYarnScheduler)rmContext.getScheduler())
               .getApplicationAttempt(appAttemptId);
 
+      for (ResourceRequest rr: partitionedAsks.getOpportunistic()) {
+        LOG.debug("Oppor request: "
+            + "priority = " + rr.getPriority()
+            + ", allocationReqId = " + rr.getAllocationRequestId()
+            + ", with capability = " + rr.getCapability()
+            + ", with location = " + rr.getResourceName()
+            + ", with execType = " + rr.getExecutionTypeRequest()
+            + ", with relax = " + rr.getRelaxLocality()
+            + ", with nodelabel = " + rr.getNodeLabelExpression()
+            + ", numContainers = " + rr.getNumContainers());
+      }
+
+      LOG.debug("Update node label: ...");
       OpportunisticContainerContext oppCtx =
           appAttempt.getOpportunisticContainerContext();
       // 选取10（默认）load最轻的node，load方式为queue长度
       oppCtx.updateNodeList(getLeastLoadedNodes());
 
+      LOG.debug("Begain allocation: ...");
       List<Container> oppContainers =
           oppContainerAllocator.allocateContainers(
               request.getResourceBlacklistRequest(),
@@ -185,6 +201,7 @@ public class OpportunisticContainerAllocatorAMService
               ResourceManager.getClusterTimeStamp(), appAttempt.getUser());
 
       // Create RMContainers and update the NMTokens.
+      LOG.debug("Creating RM container: ...");
       if (!oppContainers.isEmpty()) {
         // 创建RMcontainer并加入监控，与guarantee的container进入同样的状态机
         handleNewContainers(oppContainers, false);
@@ -192,6 +209,7 @@ public class OpportunisticContainerAllocatorAMService
         ApplicationMasterServiceUtils.addToAllocatedContainers(
             response, oppContainers);
       }
+      LOG.debug("Oppor allocation finished: ...");
 
       // Allocate GUARANTEED containers.
       // 提取出GUARANTEED的request，继续走原来方法
