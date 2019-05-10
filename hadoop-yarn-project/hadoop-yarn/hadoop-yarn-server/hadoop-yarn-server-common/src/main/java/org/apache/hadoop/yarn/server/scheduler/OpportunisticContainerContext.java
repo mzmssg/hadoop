@@ -132,6 +132,7 @@ public class OpportunisticContainerContext {
       // 子字典的key是resource，value是eReq
       Map<Resource, EnrichedResourceRequest> reqMap =
           outstandingOpReqs.get(schedulerKey);
+      // outstandingOpReqs会把三个同类request合一，因为他们的priority和id一样
       if (reqMap == null) {
         reqMap = new HashMap<>();
         outstandingOpReqs.put(schedulerKey, reqMap);
@@ -144,8 +145,7 @@ public class OpportunisticContainerContext {
         reqMap.put(request.getCapability(), eReq);
       }
       // Set numContainers only for ANY request
-      // eReq中包了一个新的ResourceRequest，这里只会把any类型的数量copy到eReq中的reqeust，rack和node的不会被拷贝，只记录在eReq中，
-      // 但上一步构造其实就已经包括了request进去，存疑这里
+      // eReq实际是三个request的合集，其中包含的request会被设成any类型，其他两个request的host和rack信息会被直接记录
       if (ResourceRequest.isAnyLocation(request.getResourceName())) {
         eReq.getRequest().setResourceName(ResourceRequest.ANY);
         eReq.getRequest().setNumContainers(request.getNumContainers());

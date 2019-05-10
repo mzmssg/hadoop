@@ -448,6 +448,7 @@ public class OpportunisticContainerAllocator {
         numAllocated++;
         // Try to spread the allocations across the nodes.
         // But don't add if it is a node local request.
+        // 对于rack或any类型的，每个node只会分配一个，分配完后就加入黑名单
         if (loopIndex != NODE_LOCAL_LOOP) {
           blacklist.add(rNode.getNodeId().getHost());
         }
@@ -485,10 +486,12 @@ public class OpportunisticContainerAllocator {
       while (numContainers > 0) {
         if (loopIndex == 0) {
           // Node local candidates
+          // 对所有node遍历一遍，每个node最多一个container
           numContainers = collectNodeLocalCandidates(
               allNodes, enrichedRR, retList, numContainers);
         } else {
           // Rack local candidates
+          // 对所有node遍历一遍，每个node最多一个container，blacklist的不算
           numContainers = collectRackLocalCandidates(
               allNodes, enrichedRR, retList, blackList, numContainers);
         }

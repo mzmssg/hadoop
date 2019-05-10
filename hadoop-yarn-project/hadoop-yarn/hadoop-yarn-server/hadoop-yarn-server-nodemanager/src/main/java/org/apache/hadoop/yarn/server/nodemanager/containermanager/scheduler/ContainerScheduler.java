@@ -290,6 +290,10 @@ public class ContainerScheduler extends AbstractService implements
         metrics.getAllocatedOpportunisticVCores());
     this.opportunisticContainersStatus.setRunningOpportContainers(
         metrics.getRunningOpportunisticContainers());
+    this.opportunisticContainersStatus.setOpportGpuUsed(
+        metrics.getAllocatedOpportunisticGPUs());
+    this.opportunisticContainersStatus.setOpportGpuAttributeUsed(
+        metrics.getAllocatedOpportunisticGPUAttribute());
     return this.opportunisticContainersStatus;
   }
 
@@ -546,7 +550,9 @@ public class ContainerScheduler extends AbstractService implements
         // Convert the number of cores to nearest integral number, due to
         // imprecision of direct float comparison.
         Math.round(resourcesToFreeUp.getCPU()
-            * getContainersMonitor().getVCoresAllocatedForContainers()) <= 0;
+            * getContainersMonitor().getVCoresAllocatedForContainers()) <= 0 &&
+        resourcesToFreeUp.getGPUs() <=0 &&
+        resourcesToFreeUp.getGPUAttribute() == 0;
   }
 
   private ResourceUtilization resourcesToFreeUp(

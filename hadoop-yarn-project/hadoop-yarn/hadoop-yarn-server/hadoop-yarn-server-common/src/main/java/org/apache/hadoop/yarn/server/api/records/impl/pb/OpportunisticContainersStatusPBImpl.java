@@ -136,4 +136,30 @@ public class OpportunisticContainersStatusPBImpl
     maybeInitBuilder();
     builder.setEstimatedQueueWaitTime(queueWaitTime);
   }
+
+  @Override
+  public int getOpportGpuUsed() {
+    YarnServerCommonProtos.OpportunisticContainersStatusProtoOrBuilder p =
+        viaProto ? proto : builder;
+    return p.getOpportGpuUsed();
+  }
+
+  @Override
+  public void setOpportGpuUsed(int opportGpuUsed) {
+    maybeInitBuilder();
+    builder.setOpportGpuUsed(opportGpuUsed);
+  }
+
+  @Override
+  public long getOpportGpuAttributeUsed() {
+    YarnServerCommonProtos.OpportunisticContainersStatusProtoOrBuilder p =
+        viaProto ? proto : builder;
+    return p.getOpportGpuAttributeUsed();
+  }
+
+  @Override
+  public void setOpportGpuAttributeUsed(long OpportGpuAttributeUsed) {
+    maybeInitBuilder();
+    builder.setOpportGpuUsed(OpportGpuAttributeUsed);
+  }
 }

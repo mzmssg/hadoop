@@ -48,7 +48,7 @@ public interface ContainersMonitor extends Service,
           containersMonitor.getVCoresAllocatedForContainers();
       int vmem = (int) (resource.getMemorySize()
           * containersMonitor.getVmemRatio());
-      resourceUtil.addTo((int)resource.getMemorySize(), vmem, vCores);
+      resourceUtil.addTo((int)resource.getMemorySize(), vmem, vCores, resource.getGPUs(), resource.getGPUAttribute());
     }
 
     /**
@@ -65,7 +65,7 @@ public interface ContainersMonitor extends Service,
           containersMonitor.getVCoresAllocatedForContainers();
       int vmem = (int) (resource.getMemorySize()
           * containersMonitor.getVmemRatio());
-      resourceUtil.subtractFrom((int)resource.getMemorySize(), vmem, vCores);
+      resourceUtil.subtractFrom((int)resource.getMemorySize(), vmem, vCores, resource.getGPUs(), resource.getGPUAttribute());
     }
   }
 }

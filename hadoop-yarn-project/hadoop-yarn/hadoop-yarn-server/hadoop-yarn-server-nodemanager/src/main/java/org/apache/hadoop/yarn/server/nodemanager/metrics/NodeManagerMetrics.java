@@ -71,6 +71,10 @@ public class NodeManagerMetrics {
       MutableGaugeInt allocatedOpportunisticVCores;
   @Metric("# of running opportunistic containers")
       MutableGaugeInt runningOpportunisticContainers;
+  @Metric("Current allocated Virtual Cores by opportunistic containers")
+      MutableGaugeInt allocatedOpportunisticGPUs;
+  @Metric("Current allocated Virtual Cores by opportunistic containers")
+      MutableGaugeLong allocatedOpportunisticGPUAttribute;
 
   @Metric("Local cache size (public and private) before clean (Bytes)")
   MutableGaugeLong cacheSizeBeforeClean;
@@ -193,6 +197,8 @@ public class NodeManagerMetrics {
     allocatedOpportunisticGB
         .set((int) Math.ceil(allocatedOpportunisticMB / 1024d));
     allocatedOpportunisticVCores.incr(res.getVirtualCores());
+    allocatedOpportunisticGPUs.incr(res.getGPUs());
+    allocatedOpportunisticGPUAttribute.set(allocatedOpportunisticGPUAttribute.value() | res.getGPUAttribute());
   }
 
   public void completeOpportunisticContainer(Resource res) {
@@ -201,6 +207,8 @@ public class NodeManagerMetrics {
     allocatedOpportunisticGB
         .set((int) Math.ceil(allocatedOpportunisticMB / 1024d));
     allocatedOpportunisticVCores.decr(res.getVirtualCores());
+    allocatedOpportunisticGPUs.decr(res.getGPUs());
+    allocatedOpportunisticGPUAttribute.set(allocatedOpportunisticGPUAttribute.value() & ~res.getGPUAttribute());
   }
 
   public void addResource(Resource res) {
@@ -307,6 +315,14 @@ public class NodeManagerMetrics {
 
   public int getRunningOpportunisticContainers() {
     return runningOpportunisticContainers.value();
+  }
+
+  public int getAllocatedOpportunisticGPUs() {
+    return allocatedOpportunisticGPUs.value();
+  }
+
+  public long getAllocatedOpportunisticGPUAttribute() {
+    return allocatedOpportunisticGPUAttribute.value();
   }
 
   public long getCacheSizeBeforeClean() {

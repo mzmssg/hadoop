@@ -165,6 +165,7 @@ public class OpportunisticContainerAllocatorAMService
         throws YarnException {
       // Partition requests to GUARANTEED and OPPORTUNISTIC.
       // 拦截原始请求，分成两组，所有request共享allocator，独享opCtx
+      // 注意每一个request实际会有三个request，分别时nodelocal，rack和any，三个ResourceRequest只有location和relax不一样
       LOG.debug("Receive request from: " + appAttemptId.getAttemptId());
       OpportunisticContainerAllocator.PartitionedResourceRequests
           partitionedAsks =

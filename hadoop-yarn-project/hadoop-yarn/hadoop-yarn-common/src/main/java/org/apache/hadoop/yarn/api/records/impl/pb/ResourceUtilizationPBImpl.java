@@ -91,6 +91,30 @@ public class ResourceUtilizationPBImpl extends ResourceUtilization {
   }
 
   @Override
+  public int getGPUs() {
+    ResourceUtilizationProtoOrBuilder p = viaProto ? proto : builder;
+    return p.getGPUs();
+  }
+
+  @Override
+  public void setGPUs(int GPU){
+    maybeInitBuilder();
+    builder.setGPUs(GPU);
+  }
+
+  @Override
+  public long getGPUAttribute(){
+    ResourceUtilizationProtoOrBuilder p = viaProto ? proto : builder;
+    return p.getGPUAttribute();
+  }
+
+  @Override
+  public void setGPUAttribute(long GPUAttribute){
+    maybeInitBuilder();
+    builder.setGPUAttribute(GPUAttribute);
+  }
+
+  @Override
   public int compareTo(ResourceUtilization other) {
     int diff = this.getPhysicalMemory() - other.getPhysicalMemory();
     if (diff == 0) {

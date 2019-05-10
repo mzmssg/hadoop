@@ -36,11 +36,19 @@ public abstract class ResourceUtilization implements
   @Public
   @Unstable
   public static ResourceUtilization newInstance(int pmem, int vmem, float cpu) {
+    return newInstance(pmem, vmem, cpu, 0 ,0);
+  }
+
+  @Public
+  @Unstable
+  public static ResourceUtilization newInstance(int pmem, int vmem, float cpu, int GPUs, long GPUAttribute) {
     ResourceUtilization utilization =
         Records.newRecord(ResourceUtilization.class);
     utilization.setPhysicalMemory(pmem);
     utilization.setVirtualMemory(vmem);
     utilization.setCPU(cpu);
+    utilization.setGPUs(GPUs);
+    utilization.setGPUAttribute(GPUAttribute);
     return utilization;
   }
 
@@ -49,7 +57,7 @@ public abstract class ResourceUtilization implements
   public static ResourceUtilization newInstance(
       ResourceUtilization resourceUtil) {
     return newInstance(resourceUtil.getPhysicalMemory(),
-        resourceUtil.getVirtualMemory(), resourceUtil.getCPU());
+        resourceUtil.getVirtualMemory(), resourceUtil.getCPU(), resourceUtil.getGPUs(), resourceUtil.getGPUAttribute());
   }
 
   /**
@@ -106,6 +114,42 @@ public abstract class ResourceUtilization implements
   @Unstable
   public abstract void setCPU(float cpu);
 
+  /**
+   * Get <em>GPU</em> utilization.
+   *
+   * @return <em>GPU</em>
+   */
+  @Public
+  @Unstable
+  public abstract int getGPUs();
+
+  /**
+   * Set <em>GPU</em> utilization.
+   *
+   * @param GPU <em>GPU utilization</em>
+   */
+  @Public
+  @Unstable
+  public abstract void setGPUs(int GPU);
+
+  /**
+   * Get <em>GPUAttribute</em> utilization.
+   *
+   * @return <em>GPUAttribute</em>
+   */
+  @Public
+  @Unstable
+  public abstract long getGPUAttribute();
+
+  /**
+   * Set <em>GPUAttribute</em> utilization.
+   *
+   * @param GPUAttribute <em>GPUAttribute utilization</em>
+   */
+  @Public
+  @Unstable
+  public abstract void setGPUAttribute(long GPUAttribute);
+
   @Override
   public int hashCode() {
     final int prime = 263167;
@@ -130,7 +174,8 @@ public abstract class ResourceUtilization implements
     ResourceUtilization other = (ResourceUtilization) obj;
     if (getVirtualMemory() != other.getVirtualMemory()
         || getPhysicalMemory() != other.getPhysicalMemory()
-        || getCPU() != other.getCPU()) {
+        || getCPU() != other.getCPU()
+        || getGPUs() != other.getGPUs()) {
       return false;
     }
     return true;
@@ -139,7 +184,7 @@ public abstract class ResourceUtilization implements
   @Override
   public String toString() {
     return "<pmem:" + getPhysicalMemory() + ", vmem:" + getVirtualMemory()
-        + ", vCores:" + getCPU() + ">";
+        + ", vCores:" + getCPU() + ", GPUs:" + getGPUs() + ", GPUAttribute:" + getGPUAttribute() + ">";
   }
 
   /**
@@ -151,9 +196,17 @@ public abstract class ResourceUtilization implements
   @Public
   @Unstable
   public void addTo(int pmem, int vmem, float cpu) {
+    addTo(pmem, vmem, cpu, 0, 0);
+  }
+
+  @Public
+  @Unstable
+  public void addTo(int pmem, int vmem, float cpu, int GPUs, long GPUAttribute) {
     this.setPhysicalMemory(this.getPhysicalMemory() + pmem);
     this.setVirtualMemory(this.getVirtualMemory() + vmem);
     this.setCPU(this.getCPU() + cpu);
+    this.setGPUs(this.getGPUs() + GPUs);
+    this.setGPUAttribute(this.getGPUAttribute() | GPUAttribute);
   }
 
   /**
@@ -165,8 +218,16 @@ public abstract class ResourceUtilization implements
   @Public
   @Unstable
   public void subtractFrom(int pmem, int vmem, float cpu) {
+    subtractFrom(pmem, vmem, cpu, 0, 0);
+  }
+
+  @Public
+  @Unstable
+  public void subtractFrom(int pmem, int vmem, float cpu, int GPUs, long GPUAttribute) {
     this.setPhysicalMemory(this.getPhysicalMemory() - pmem);
     this.setVirtualMemory(this.getVirtualMemory() - vmem);
     this.setCPU(this.getCPU() - cpu);
+    this.setGPUs(this.getGPUs() - GPUs);
+    this.setGPUAttribute(this.getGPUAttribute() & ~GPUAttribute);
   }
 }

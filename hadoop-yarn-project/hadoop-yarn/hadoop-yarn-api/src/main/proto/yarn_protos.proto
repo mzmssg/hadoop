@@ -77,6 +77,8 @@ message ResourceUtilizationProto {
   optional int32 pmem = 1;
   optional int32 vmem = 2;
   optional float cpu = 3;
+  optional int32 GPUs = 4;
+  optional int32 GPUAttribute = 5;
 }
 
 message ResourceOptionProto {

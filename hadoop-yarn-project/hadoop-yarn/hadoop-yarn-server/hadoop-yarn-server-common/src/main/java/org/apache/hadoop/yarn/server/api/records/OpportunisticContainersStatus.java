@@ -149,4 +149,44 @@ public abstract class OpportunisticContainersStatus {
   @Unstable
   public abstract void setEstimatedQueueWaitTime(int queueWaitTime);
 
+  /**
+   * Returns GPU cores currently used on the node for running opportunistic
+   * containers.
+   *
+   * @return estimated queuing time.
+   */
+  @Private
+  @Unstable
+  public abstract int getOpportGpuUsed();
+
+  /**
+   * Set GPU cores currently used on the node for running opportunistic
+   * containers.
+   *
+   * @param opportGpuUsed estimated queuing time.
+   */
+  @Private
+  @Unstable
+  public abstract void setOpportGpuUsed(int opportGpuUsed);
+
+  /**
+   * Returns GPU attribute currently used on the node for running opportunistic
+   * containers.
+   *
+   * @return estimated queuing time.
+   */
+  @Private
+  @Unstable
+  public abstract long getOpportGpuAttributeUsed();
+
+  /**
+   * Set GPU attribute currently used on the node for running opportunistic
+   * containers.
+   *
+   * @param OpportGpuAttributeUsed estimated queuing time.
+   */
+  @Private
+  @Unstable
+  public abstract void setOpportGpuAttributeUsed(long OpportGpuAttributeUsed);
+
 }

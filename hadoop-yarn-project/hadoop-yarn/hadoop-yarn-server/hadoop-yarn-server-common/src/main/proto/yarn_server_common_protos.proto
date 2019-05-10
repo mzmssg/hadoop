@@ -51,6 +51,8 @@ message OpportunisticContainersStatusProto {
   optional int32 queued_opport_containers = 4;
   optional int32 wait_queue_length = 5;
   optional int32 estimated_queue_wait_time = 6;
+  optional int32 opport_gpu_used = 7;
+  optional int64 opport_gpu_attribute_used = 8;
 }
 
 message MasterKeyProto {

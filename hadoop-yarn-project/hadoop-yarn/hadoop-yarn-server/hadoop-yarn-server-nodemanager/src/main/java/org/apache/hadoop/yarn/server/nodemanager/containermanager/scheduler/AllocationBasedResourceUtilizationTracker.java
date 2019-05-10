@@ -83,11 +83,13 @@ public class AllocationBasedResourceUtilizationTracker implements
     long pMemBytes = container.getResource().getMemorySize() * 1024 * 1024L;
     return hasResourcesAvailable(pMemBytes,
         (long) (getContainersMonitor().getVmemRatio()* pMemBytes),
-        container.getResource().getVirtualCores());
+        container.getResource().getVirtualCores(),
+        container.getResource().getGPUs(),
+        container.getResource().getGPUAttribute());
   }
 
   private boolean hasResourcesAvailable(long pMemBytes, long vMemBytes,
-      int cpuVcores) {
+      int cpuVcores, int GPUs, long GPUAttribute) {
     // Check physical memory.
     if (LOG.isDebugEnabled()) {
       LOG.debug("pMemCheck [current={} + asked={} > allowed={}]",
@@ -129,6 +131,23 @@ public class AllocationBasedResourceUtilizationTracker implements
         getContainersMonitor().getVCoresAllocatedForContainers(), cpuVcores)) {
       return false;
     }
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("before GPUCheck [currentGPUAttribute={} askedGPUAttribute={} > allowedGPU={} ]",
+          this.containersAllocation.getGPUs(), GPUAttribute,
+          getContainersMonitor().getGPUsAllocatedForContainers());
+    }
+
+    if (GPUs != Long.bitCount(GPUAttribute)) {
+      LOG.warn("Unmatched allocation: gpus={}, gpuattribute={}", GPUs, GPUAttribute);
+    }
+
+    // Check GPU.
+    if (!hasEnoughGPU(this.containersAllocation.getGPUs(), GPUs,
+        this.containersAllocation.getGPUAttribute(), GPUAttribute,
+        (int) getContainersMonitor().getGPUsAllocatedForContainers())) {
+      return false;
+    }
     return true;
   }
 
@@ -150,6 +169,12 @@ public class AllocationBasedResourceUtilizationTracker implements
     // Must not cast here, as it would truncate the decimal digits.
     return Math.round(currentAllocation * totalCores)
         + coresRequested <= totalCores;
+  }
+
+  public boolean hasEnoughGPU(int currentGPU, int askedGPU,
+                              long currentGPUAttribute, long askedGPUAttribute, int totalGPUs) {
+    return currentGPU + askedGPU < totalGPUs
+        && (currentGPUAttribute & askedGPUAttribute) == 0;
   }
 
   public ContainersMonitor getContainersMonitor() {
