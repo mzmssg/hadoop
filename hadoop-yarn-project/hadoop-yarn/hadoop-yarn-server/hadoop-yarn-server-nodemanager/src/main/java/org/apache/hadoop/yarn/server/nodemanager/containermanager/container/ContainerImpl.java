@@ -1525,9 +1525,15 @@ public class ContainerImpl implements Container {
   static class ExitedWithFailureTransition extends ContainerTransition {
 
     boolean clCleanupRequired;
+    boolean diagnosticsRequired;
 
     public ExitedWithFailureTransition(boolean clCleanupRequired) {
+      this(clCleanupRequired, true);
+    }
+
+    public ExitedWithFailureTransition(boolean clCleanupRequired, boolean diagnosticsRequired) {
       this.clCleanupRequired = clCleanupRequired;
+      this.diagnosticsRequired = diagnosticsRequired;
     }
 
     @Override
@@ -1535,7 +1541,7 @@ public class ContainerImpl implements Container {
       container.setIsReInitializing(false);
       ContainerExitEvent exitEvent = (ContainerExitEvent) event;
       container.exitCode = exitEvent.getExitCode();
-      if (exitEvent.getDiagnosticInfo() != null) {
+      if (diagnosticsRequired && exitEvent.getDiagnosticInfo() != null) {
         container.addDiagnostics(exitEvent.getDiagnosticInfo(), "\n");
       }
 
@@ -1608,7 +1614,7 @@ public class ContainerImpl implements Container {
         new KilledForReInitializationTransition().transition(container, event);
         return ContainerState.SCHEDULED;
       } else {
-        new ExitedWithFailureTransition(true).transition(container, event);
+        new ExitedWithFailureTransition(true, false).transition(container, event);
         return ContainerState.EXITED_WITH_FAILURE;
       }
     }
