@@ -1028,12 +1028,19 @@ public class ClientRMService extends AbstractService implements
     if (schedulerNodeReport != null) {
       used = schedulerNodeReport.getUsedResource();
       numContainers = schedulerNodeReport.getNumContainers();
-    } 
+    }
+
+    Resource total = Resource.newInstance(rmNode.getTotalCapability().getMemorySize(),
+        rmNode.getTotalCapability().getVirtualCores(), rmNode.getTotalCapability().getGPUs(),
+        rmNode.getTotalCapability().getGPUAttribute(), rmNode.getTotalCapability().getPorts());
+    if (total.getPorts() != null) {
+      total.setPorts(total.getPorts().minusSelf(rmNode.getLocalUsedPortsSnapshot()));
+    }
 
     NodeReport report =
         BuilderUtils.newNodeReport(rmNode.getNodeID(), rmNode.getState(),
             rmNode.getHttpAddress(), rmNode.getRackName(), used,
-            rmNode.getTotalCapability(), numContainers,
+            total, numContainers,
             rmNode.getHealthReport(), rmNode.getLastHealthReportTime(),
             rmNode.getNodeLabels(), rmNode.getAggregatedContainersUtilization(),
             rmNode.getNodeUtilization());
