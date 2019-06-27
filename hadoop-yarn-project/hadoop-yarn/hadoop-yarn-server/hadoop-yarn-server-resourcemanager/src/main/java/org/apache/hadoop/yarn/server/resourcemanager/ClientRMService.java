@@ -174,6 +174,7 @@ import org.apache.hadoop.yarn.server.utils.BuilderUtils;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.hadoop.yarn.util.Records;
 import org.apache.hadoop.yarn.util.UTCClock;
+import org.apache.hadoop.yarn.util.resource.Resources;
 import org.apache.hadoop.yarn.util.timeline.TimelineUtils;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -1030,9 +1031,7 @@ public class ClientRMService extends AbstractService implements
       numContainers = schedulerNodeReport.getNumContainers();
     }
 
-    Resource total = Resource.newInstance(rmNode.getTotalCapability().getMemorySize(),
-        rmNode.getTotalCapability().getVirtualCores(), rmNode.getTotalCapability().getGPUs(),
-        rmNode.getTotalCapability().getGPUAttribute(), rmNode.getTotalCapability().getPorts());
+    Resource total = Resources.clone(rmNode.getTotalCapability());
     if (total.getPorts() != null) {
       total.setPorts(total.getPorts().minusSelf(rmNode.getLocalUsedPortsSnapshot()));
     }
